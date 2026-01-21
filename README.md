@@ -1,70 +1,168 @@
-# Getting Started with Create React App
+# 🎓 Sistem Rekap Absensi Kampus
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Dashboard monitoring kehadiran dosen dan karyawan berbasis fingerspot dengan tampilan yang modern dan user-friendly.
 
-## Available Scripts
+## ✨ Fitur
 
-In the project directory, you can run:
+### 🔐 Authentication
+- ✅ Login dengan email & password
+- ✅ Register akun baru
+- ✅ Reset password via email (kode verifikasi)
+- ✅ Protected routes & JWT authentication
 
-### `npm start`
+### 📊 Dashboard
+- ✅ Rekap absensi dosen (tanpa jam telat)
+- ✅ Rekap absensi karyawan (dengan jam telat)
+- ✅ Filter periode (minggu/bulan/custom)
+- ✅ Export data (Excel, PDF, CSV)
+- ✅ Search & filter real-time
+- ✅ Statistik kehadiran
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 🛠️ Tech Stack
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+**Frontend:**
+- React.js 18
+- React Router DOM (routing)
+- Lucide React (icons)
+- CSS3 (styling)
 
-### `npm test`
+**Backend Integration:**
+- RESTful API
+- JWT Authentication
+- Fetch API
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 📁 Struktur Project
 
-### `npm run build`
+```
+attendance-system/
+├── public/
+├── src/
+│   ├── components/
+│   │   ├── auth/
+│   │   │   └── AuthLayout.jsx
+│   │   ├── DosenTable.jsx
+│   │   ├── FilterPanel.jsx
+│   │   ├── Header.jsx
+│   │   ├── KaryawanTable.jsx
+│   │   └── StatsCard.jsx
+│   ├── pages/
+│   │   ├── Dashboard.jsx
+│   │   ├── Login.jsx
+│   │   ├── Register.jsx
+│   │   └── ResetPassword.jsx
+│   ├── services/
+│   │   ├── apiService.js
+│   │   └── authService.js
+│   ├── styles/
+│   │   ├── auth.css
+│   │   └── main.css
+│   ├── utils/
+│   │   └── dateUtils.js
+│   ├── App.jsx
+│   └── index.js
+├── .gitignore
+├── package.json
+└── README.md
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 🚀 Cara Install & Jalankan
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Prerequisites
+- Node.js v14+ 
+- npm atau yarn
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Installation
 
-### `npm run eject`
+1. **Clone repository**
+   ```bash
+   git clone https://github.com/username/attendance-system.git
+   cd attendance-system
+   ```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+3. **Setup environment variables**
+   
+   Buat file `.env` di root folder (opsional):
+   ```env
+   REACT_APP_API_URL=http://localhost:5000
+   ```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+4. **Jalankan development server**
+   ```bash
+   npm start
+   ```
+   
+   Aplikasi akan berjalan di `http://localhost:3000`
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+5. **Build untuk production**
+   ```bash
+   npm run build
+   ```
 
-## Learn More
+## 🔧 Konfigurasi Backend
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Update URL backend di file `src/services/apiService.js` dan `src/services/authService.js`:
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```javascript
+const API_CONFIG = {
+  BASE_URL: 'https://your-backend-api.com', // Ganti dengan URL backend Anda
+  ENDPOINTS: {
+    // ...
+  }
+};
+```
 
-### Code Splitting
+## 📝 API Endpoints
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### Authentication
+```
+POST /api/auth/login
+POST /api/auth/register
+POST /api/auth/forgot-password
+POST /api/auth/verify-code
+POST /api/auth/reset-password
+POST /api/auth/logout
+```
 
-### Analyzing the Bundle Size
+### Attendance
+```
+GET  /api/attendance/dosen?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
+GET  /api/attendance/karyawan?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
+GET  /api/attendance/export?type=dosen&format=excel&start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## 📸 Screenshots
 
-### Making a Progressive Web App
+### Login Page
+![Login Page](screenshots/login.png)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### Dashboard - Rekap Dosen
+![Dashboard Dosen](screenshots/dashboard-dosen.png)
 
-### Advanced Configuration
+### Dashboard - Rekap Karyawan
+![Dashboard Karyawan](screenshots/dashboard-karyawan.png)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## 🤝 Contributing
 
-### Deployment
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## 📄 License
 
-### `npm run build` fails to minify
+This project is licensed under the MIT License.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## 👨‍💻 Developer
+
+Developed by [Your Name]
+
+## 📧 Contact
+
+- Email: your.email@example.com
+- GitHub: [@yourusername](https://github.com/yourusername)
+
+---
+
+⭐ Jangan lupa kasih star jika project ini membantu!
