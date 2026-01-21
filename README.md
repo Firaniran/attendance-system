@@ -156,12 +156,12 @@ This project is licensed under the MIT License.
 
 ## 👨‍💻 Developer
 
-Developed by [Your Name]
+Developed by [Firani]
 
 ## 📧 Contact
 
-- Email: your.email@example.com
-- GitHub: [@yourusername](https://github.com/yourusername)
+- Email: your.firaninuranjani.com
+- GitHub: [@Firaniran](https://github.com/Firaniran)
 
 ---
 
