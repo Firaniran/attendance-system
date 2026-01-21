@@ -1,105 +1,100 @@
-// Konfigurasi API
-const API_CONFIG = {
-  BASE_URL: 'https://api-kampus-anda.com',
-  ENDPOINTS: {
-    DOSEN: '/api/attendance/dosen',
-    KARYAWAN: '/api/attendance/karyawan',
-    EXPORT: '/api/attendance/export'
-  }
-};
+// ==================== API CONFIG ====================
+const BASE_URL = 'http://localhost:8000'; 
+// ganti sesuai BE lo: 3000 / 8080 / domain
+
+const getAuthHeader = () => ({
+  Authorization: `Bearer ${localStorage.getItem('token')}`,
+  'Content-Type': 'application/json'
+});
 
 export const apiService = {
-  // Fetch data dosen
+  // ==================== ATTENDANCE DOSEN ====================
   async fetchDosenAttendance(startDate, endDate, dosenId = null) {
     try {
       const params = new URLSearchParams({
         start_date: startDate,
-        end_date: endDate,
-        ...(dosenId && { dosen_id: dosenId })
+        end_date: endDate
       });
-      
-      const response = await fetch(
-        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.DOSEN}?${params}`,
+
+      if (dosenId) params.append('dosen_id', dosenId);
+
+      const res = await fetch(
+        `${BASE_URL}/attendance/dosen?${params.toString()}`,
         {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
+          headers: getAuthHeader()
         }
       );
-      
-      if (!response.ok) throw new Error('Failed to fetch dosen data');
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching dosen:', error);
+
+      if (!res.ok) throw new Error('Fetch dosen gagal');
+      return await res.json();
+    } catch (err) {
+      console.error(err);
       return null;
     }
   },
 
-  // Fetch data karyawan
+  // ==================== ATTENDANCE KARYAWAN ====================
   async fetchKaryawanAttendance(startDate, endDate, karyawanId = null) {
     try {
       const params = new URLSearchParams({
         start_date: startDate,
-        end_date: endDate,
-        ...(karyawanId && { karyawan_id: karyawanId })
+        end_date: endDate
       });
-      
-      const response = await fetch(
-        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.KARYAWAN}?${params}`,
+
+      if (karyawanId) params.append('karyawan_id', karyawanId);
+
+      const res = await fetch(
+        `${BASE_URL}/attendance/karyawan?${params.toString()}`,
         {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
+          headers: getAuthHeader()
         }
       );
-      
-      if (!response.ok) throw new Error('Failed to fetch karyawan data');
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching karyawan:', error);
+
+      if (!res.ok) throw new Error('Fetch karyawan gagal');
+      return await res.json();
+    } catch (err) {
+      console.error(err);
       return null;
     }
   },
 
-  // Export data
-  async exportData(type, format, startDate, endDate, userId = null) {
-    try {
-      const params = new URLSearchParams({
-        type,
-        format,
-        start_date: startDate,
-        end_date: endDate,
-        ...(userId && { user_id: userId })
-      });
-      
-      const response = await fetch(
-        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.EXPORT}?${params}`,
-        {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
+// ==================== EXPORT ====================
+async exportData(type, startDate, endDate) {
+  try {
+    const params = new URLSearchParams({
+      type,
+      start_date: startDate,
+      end_date: endDate
+    });
+
+    const res = await fetch(
+      `${BASE_URL}/attendance/export?${params.toString()}`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
         }
-      );
-      
-      if (!response.ok) throw new Error('Failed to export data');
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `rekap-absensi-${type}-${format}.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error exporting data:', error);
-      alert('Gagal mengekspor data');
-    }
+      }
+    );
+
+    if (!res.ok) throw new Error('Export gagal');
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `attendance-${type}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error(err);
+    alert('Export gagal');
   }
+ }
 };

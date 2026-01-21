@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🎓 Sistem Rekap Absensi Kampus
 
 Dashboard monitoring kehadiran dosen dan karyawan berbasis fingerspot dengan tampilan yang modern dan user-friendly.
