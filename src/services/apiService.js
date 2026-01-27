@@ -1,11 +1,23 @@
 // ==================== API CONFIG ====================
-const BASE_URL = 'http://localhost:8000'; 
-// ganti sesuai BE lo: 3000 / 8080 / domain
+const BASE_URL = 'http://localhost:5000/api';
+// Updated to match Backend PORT and /api prefix
 
 const getAuthHeader = () => ({
   Authorization: `Bearer ${localStorage.getItem('token')}`,
   'Content-Type': 'application/json'
 });
+
+// Helper to handle API response and auto-logout on 401/403
+const handleResponse = async (res) => {
+  if (res.status === 401 || res.status === 403) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+    throw new Error('Session expired');
+  }
+  if (!res.ok) throw new Error(res.statusText || 'API Error');
+  return res.json();
+};
 
 export const apiService = {
   // ==================== ATTENDANCE DOSEN ====================
@@ -26,11 +38,12 @@ export const apiService = {
         }
       );
 
-      if (!res.ok) throw new Error('Fetch dosen gagal');
-      return await res.json();
+      const response = await handleResponse(res);
+      // Backend returns: { success, message, data: [...] }
+      return response?.data || [];
     } catch (err) {
       console.error(err);
-      return null;
+      return [];
     }
   },
 
@@ -52,49 +65,66 @@ export const apiService = {
         }
       );
 
-      if (!res.ok) throw new Error('Fetch karyawan gagal');
-      return await res.json();
+      const response = await handleResponse(res);
+      // Backend returns: { success, message, data: [...] }
+      return response?.data || [];
     } catch (err) {
       console.error(err);
-      return null;
+      return [];
     }
   },
 
-// ==================== EXPORT ====================
-async exportData(type, startDate, endDate) {
-  try {
-    const params = new URLSearchParams({
-      type,
-      start_date: startDate,
-      end_date: endDate
-    });
+  // ==================== EXPORT ====================
+  async exportData(format, jabatan, startDate, endDate) {
+    try {
+      const params = new URLSearchParams({
+        start_date: startDate,
+        end_date: endDate
+      });
 
-    const res = await fetch(
-      `${BASE_URL}/attendance/export?${params.toString()}`,
-      {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
+      // Add jabatan filter (DOSEN or KARYAWAN)
+      if (jabatan) {
+        params.append('jabatan', jabatan.toUpperCase());
       }
-    );
 
-    if (!res.ok) throw new Error('Export gagal');
+      const res = await fetch(
+        `${BASE_URL}/export/${format}?${params.toString()}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
 
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
+      if (res.status === 401 || res.status === 403) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        throw new Error('Session expired');
+      }
 
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `attendance-${type}.xlsx`;
-    document.body.appendChild(a);
-    a.click();
+      if (!res.ok) throw new Error('Export gagal');
 
-    a.remove();
-    window.URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error(err);
-    alert('Export gagal');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      // Determine file extension based on format
+      let extension = 'xlsx';
+      if (format === 'csv') extension = 'csv';
+      else if (format === 'pdf') extension = 'pdf';
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rekap-absensi-${jabatan || 'all'}.${extension}`;
+      document.body.appendChild(a);
+      a.click();
+
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert('Export gagal. Silakan coba lagi.');
+    }
   }
- }
 };

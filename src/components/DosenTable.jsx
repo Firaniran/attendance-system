@@ -3,9 +3,8 @@ import { XCircle } from 'lucide-react';
 
 const DosenTable = ({ data, searchTerm }) => {
   const filteredData = data.filter(dosen =>
-    dosen.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    dosen.nip.includes(searchTerm) ||
-    dosen.matakuliah.toLowerCase().includes(searchTerm.toLowerCase())
+    (dosen.nama || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (dosen.nip || '').includes(searchTerm)
   );
 
   const getPercentageClass = (percentage) => {
@@ -28,31 +27,27 @@ const DosenTable = ({ data, searchTerm }) => {
       <table>
         <thead>
           <tr>
-            <th>No</th>
-            <th>Nama Dosen</th>
-            <th>NIP</th>
-            <th>Mata Kuliah</th>
+            <th style={{ textAlign: 'center' }}>No</th>
+            <th style={{ textAlign: 'center' }}>Nama</th>
+            <th style={{ textAlign: 'center' }}>NIP</th>
             <th style={{ textAlign: 'center' }}>Hadir</th>
-            <th style={{ textAlign: 'center' }}>Total Mengajar</th>
-            <th style={{ textAlign: 'center' }}>Persentase</th>
-            <th>Kehadiran Terakhir</th>
+            <th style={{ textAlign: 'center' }}>Total Hari Kerja</th>
+            <th style={{ textAlign: 'center' }}>Waktu Kehadiran</th>
+            <th style={{ textAlign: 'center' }}>Check In Terakhir</th>
+            <th style={{ textAlign: 'center' }}>Check Out Terakhir</th>
           </tr>
         </thead>
         <tbody>
           {filteredData.map((dosen, index) => (
-            <tr key={dosen.id}>
-              <td>{index + 1}</td>
-              <td style={{ fontWeight: '600' }}>{dosen.nama}</td>
-              <td>{dosen.nip}</td>
-              <td>{dosen.matakuliah}</td>
-              <td style={{ textAlign: 'center' }}>{dosen.totalHadir}</td>
-              <td style={{ textAlign: 'center' }}>{dosen.totalMengajar}</td>
-              <td style={{ textAlign: 'center' }}>
-                <span className={getPercentageClass(dosen.persentase)}>
-                  {dosen.persentase.toFixed(1)}%
-                </span>
-              </td>
-              <td>{dosen.lastAttendance}</td>
+            <tr key={dosen.id || dosen.nip || index}>
+              <td style={{ textAlign: 'center' }}>{index + 1}</td>
+              <td style={{ textAlign: 'center', fontWeight: '600' }}>{dosen.nama || 'N/A'}</td>
+              <td style={{ textAlign: 'center' }}>{dosen.nip || 'N/A'}</td>
+              <td style={{ textAlign: 'center' }}>{dosen.totalHadir || 0}</td>
+              <td style={{ textAlign: 'center' }}>{dosen.totalHariKerja || 0}</td>
+              <td style={{ textAlign: 'center' }}>{dosen.attendanceDates || 'Belum ada data'}</td>
+              <td style={{ textAlign: 'center' }}>{dosen.lastCheckIn || 'Belum ada data'}</td>
+              <td style={{ textAlign: 'center' }}>{dosen.lastCheckOut || 'Belum ada data'}</td>
             </tr>
           ))}
         </tbody>
