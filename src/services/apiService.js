@@ -1,196 +1,143 @@
-// ==================== API SERVICE ====================
-// File: src/services/apiService.js
+// src/services/apiService.js
 
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = "http://localhost:5000/api";
 
-// ==================== GET AUTH HEADER ====================
+// ==================== AUTH HEADER ====================
 const getAuthHeader = () => {
-  const token = localStorage.getItem('token');
-  
+  const token = localStorage.getItem("token");
+
   if (!token) {
-    console.error('❌ Token tidak ditemukan di localStorage');
+    console.error("❌ Token tidak ditemukan");
     return null;
   }
-  
-  console.log('✅ Token ditemukan:', token.substring(0, 20) + '...');
-  
+
   return {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json"
   };
 };
 
 // ==================== HANDLE RESPONSE ====================
 const handleResponse = async (res) => {
-  // Handle unauthorized
-  if (res.status === 401 || res.status === 403) {
-    console.error('❌ Unauthorized - Token expired atau invalid');
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/login';
-    throw new Error('Session expired');
+  let data = null;
+
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
   }
 
-  // Parse JSON response
-  const data = await res.json();
+  if (res.status === 401 || res.status === 403) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.href = "/login";
+    throw new Error("Session expired");
+  }
 
-  // Handle error response
   if (!res.ok) {
-    throw new Error(data.message || res.statusText || 'API Error');
+    throw new Error(data?.message || res.statusText || "API Error");
   }
 
   return data;
 };
 
-// ==================== API SERVICE OBJECT ====================
+// ==================== API SERVICE ====================
 export const apiService = {
-  
-  // ==================== FETCH DOSEN ATTENDANCE ====================
+
+  // ==================== DOSEN ATTENDANCE ====================
   async fetchDosenAttendance(startDate, endDate, dosenId = null) {
     try {
+      const headers = getAuthHeader();
+      if (!headers) return [];
+
       const params = new URLSearchParams({
         start_date: startDate,
-        end_date: endDate
+        end_date: endDate,
+        page: 1,
+        limit: 1000
       });
 
-      if (dosenId) params.append('dosen_id', dosenId);
-
-      const headers = getAuthHeader();
-      
-      if (!headers) {
-        console.error('❌ Headers tidak valid, redirect ke login');
-        window.location.href = '/login';
-        return [];
-      }
+      if (dosenId) params.append("dosen_id", dosenId);
 
       const url = `${BASE_URL}/attendance/dosen?${params.toString()}`;
-      console.log('📤 Fetching Dosen Attendance:', url);
+      console.log("📤 FETCH DOSEN:", url);
 
-      const res = await fetch(url, {
-        method: 'GET',
-        headers: headers
-      });
+      const res = await fetch(url, { headers });
+      const data = await handleResponse(res);
 
-      const response = await handleResponse(res);
+      return Array.isArray(data?.data) ? data.data : [];
 
-      if (!response.success) {
-        throw new Error(response.message || 'Request gagal');
-      }
-
-      console.log('✅ Dosen data received:', response.data);
-      return response.data || [];
-      
     } catch (err) {
-      console.error('❌ Error fetchDosenAttendance:', err);
+      console.error("❌ fetchDosenAttendance:", err.message);
       return [];
     }
   },
 
-  // ==================== FETCH KARYAWAN ATTENDANCE ====================
+  // ==================== KARYAWAN ATTENDANCE ====================
   async fetchKaryawanAttendance(startDate, endDate, karyawanId = null) {
     try {
+      const headers = getAuthHeader();
+      if (!headers) return [];
+
       const params = new URLSearchParams({
         start_date: startDate,
-        end_date: endDate
+        end_date: endDate,
+        page: 1,
+        limit: 1000
       });
 
-      if (karyawanId) params.append('karyawan_id', karyawanId);
-
-      const headers = getAuthHeader();
-      
-      if (!headers) {
-        console.error('❌ Headers tidak valid, redirect ke login');
-        window.location.href = '/login';
-        return [];
-      }
+      if (karyawanId) params.append("karyawan_id", karyawanId);
 
       const url = `${BASE_URL}/attendance/karyawan?${params.toString()}`;
-      console.log('📤 Fetching Karyawan Attendance:', url);
+      console.log("📤 FETCH KARYAWAN:", url);
 
-      const res = await fetch(url, {
-        method: 'GET',
-        headers: headers
-      });
+      const res = await fetch(url, { headers });
+      const data = await handleResponse(res);
 
-      const response = await handleResponse(res);
+      return Array.isArray(data?.data) ? data.data : [];
 
-      if (!response.success) {
-        throw new Error(response.message || 'Request gagal');
-      }
-
-      console.log('✅ Karyawan data received:', response.data);
-      return response.data || [];
-      
     } catch (err) {
-      console.error('❌ Error fetchKaryawanAttendance:', err);
+      console.error("❌ fetchKaryawanAttendance:", err.message);
       return [];
     }
   },
 
-  // ==================== EXPORT DATA ====================
+  // ==================== EXPORT ====================
   async exportData(jabatan, format, startDate, endDate) {
     try {
-      const params = new URLSearchParams({
-        start_date: startDate,
-        end_date: endDate
-      });
-
-      // Add jabatan filter (DOSEN or KARYAWAN)
-      if (jabatan) {
-        params.append('jabatan', jabatan.toUpperCase());
-      }
-
-      const token = localStorage.getItem('token');
-      
+      const token = localStorage.getItem("token");
       if (!token) {
-        alert('Session expired. Silakan login kembali.');
-        window.location.href = '/login';
+        window.location.href = "/login";
         return;
       }
 
-      const url = `${BASE_URL}/export/${format}?${params.toString()}`;
-      console.log('📤 Exporting data:', url);
-
-      const res = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const params = new URLSearchParams({
+        start_date: startDate,
+        end_date: endDate,
+        jabatan: jabatan?.toUpperCase()
       });
 
-      if (res.status === 401 || res.status === 403) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
-        throw new Error('Session expired');
-      }
+      const url = `${BASE_URL}/export/${format}?${params.toString()}`;
+      console.log("📤 EXPORT:", url);
 
-      if (!res.ok) {
-        throw new Error('Export gagal');
-      }
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!res.ok) throw new Error("Export gagal");
 
       const blob = await res.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `rekap-${jabatan}-${startDate}.${format}`;
+      link.click();
 
-      // Determine file extension
-      let extension = 'xlsx';
-      if (format === 'csv') extension = 'csv';
-      else if (format === 'pdf') extension = 'pdf';
+      URL.revokeObjectURL(link.href);
+      console.log("✅ Export sukses");
 
-      const a = document.createElement('a');
-      a.href = downloadUrl;
-      a.download = `rekap-absensi-${jabatan || 'all'}-${startDate}.${extension}`;
-      document.body.appendChild(a);
-      a.click();
-
-      a.remove();
-      window.URL.revokeObjectURL(downloadUrl);
-      
-      console.log('✅ Export berhasil');
-      
     } catch (err) {
-      console.error('❌ Error export:', err);
-      alert('Export gagal. Silakan coba lagi.');
+      console.error("❌ Export error:", err.message);
+      alert("Export gagal");
     }
   }
 };
