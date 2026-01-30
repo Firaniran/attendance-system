@@ -9,18 +9,18 @@ import StatsCard from '../components/StatsCard';
 import FilterPanel from '../components/FilterPanel';
 import DosenTable from '../components/DosenTable';
 import KaryawanTable from '../components/KaryawanTable';
-import { getWeekRange, getMonthRange } from '../utils/dateUtils';
+import { getTodayRange, getWeekRange, getMonthRange } from '../utils/dateUtils';
 import { apiService } from '../services/apiService';
 import { authService } from '../services/authService';
 import '../styles/main.css';
 
-// ==================== MOCK DATA (FALLBACK) ====================
+// ==================== MOCK DATA ====================
 const mockDosenData = [
   {
     id: 1,
     nama: 'Aziz Azidani, M.Kom',
     nip: '198501012010011001',
-    matakuliah: 'Konfigurasi Jaringan',
+    matakuliah: 'Kongfigurasi Jaringan',
     totalHadir: 18,
     totalMengajar: 20,
     persentase: 90,
@@ -35,7 +35,7 @@ const mockDosenData = [
     totalMengajar: 16,
     persentase: 93.75,
     lastAttendance: '2025-01-07 10:15'
-  }
+  },
 ];
 
 const mockKaryawanData = [
@@ -62,6 +62,18 @@ const mockKaryawanData = [
     persentase: 95.45,
     lastCheckIn: '2025-01-07 07:55',
     lastCheckOut: '2025-01-06 17:10'
+  },
+  {
+    id: 3,
+    nama: 'Andi Wijaya',
+    nip: '199203202017011002',
+    jabatan: 'Staff Keuangan',
+    totalHadir: 19,
+    totalHariKerja: 22,
+    totalTerlambat: 5,
+    persentase: 86.36,
+    lastCheckIn: '2025-01-07 08:25',
+    lastCheckOut: '2025-01-06 17:00'
   }
 ];
 
@@ -70,95 +82,44 @@ function Dashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dosen');
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateRange, setDateRange] = useState(getWeekRange());
-  const [dosenData, setDosenData] = useState([]);
-  const [karyawanData, setKaryawanData] = useState([]);
+  const [selectedPeriod, setSelectedPeriod] = useState('today');
+  const [dateRange, setDateRange] = useState(getTodayRange());
+  const [dosenData, setDosenData] = useState(mockDosenData);
+  const [karyawanData, setKaryawanData] = useState(mockKaryawanData);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
 
-  // ==================== CHECK AUTHENTICATION ====================
   useEffect(() => {
-    console.log('🔍 Checking authentication...');
-    
-    if (!authService.isAuthenticated()) {
-      console.log('❌ Not authenticated, redirecting to login');
-      navigate('/login');
-      return;
-    }
-
+    // Get current user info
     const currentUser = authService.getCurrentUser();
     setUser(currentUser);
-    
-    console.log('✅ User authenticated:', currentUser);
-    console.log('👤 User role:', currentUser?.role);
-    
-    // Load initial data
-    loadData();
-  }, []);
 
-  // ==================== RELOAD DATA WHEN TAB OR DATE CHANGES ====================
-  useEffect(() => {
-    if (authService.isAuthenticated()) {
-      loadData();
-    }
+    // Load data
+    loadData();
   }, [activeTab, dateRange]);
 
-  // ==================== LOAD DATA FROM API ====================
   const loadData = async () => {
-    console.log('📊 Loading data for tab:', activeTab);
-    console.log('📅 Date range:', dateRange);
     setLoading(true);
-    
     try {
       if (activeTab === 'dosen') {
-        console.log('🔄 Fetching dosen data from API...');
-        const data = await apiService.fetchDosenAttendance(
-          dateRange.start, 
-          dateRange.end
-        );
-        
-        console.log('📦 API Response:', data);
-        
-        if (data === null) {
-          console.log('❌ API error, using mock dosen data');
-          setDosenData(data);
-        } else {
-          console.log('✅ Dosen data loaded from API:', data.length, 'records');
-          setDosenData(data);
-        }
+        const data = await apiService.fetchDosenAttendance(dateRange.start, dateRange.end);
+        if (data) setDosenData(data);
       } else {
-        console.log('🔄 Fetching karyawan data from API...');
-        const data = await apiService.fetchKaryawanAttendance(
-          dateRange.start, 
-          dateRange.end
-        );
-        
-        console.log('📦 API Response:', data);
-        
-    if (data === null) {
-      setKaryawanData(mockKaryawanData);
-    } else {
-      setKaryawanData(data);
-    }
+        const data = await apiService.fetchKaryawanAttendance(dateRange.start, dateRange.end);
+        if (data) setKaryawanData(data);
       }
     } catch (error) {
-      console.error('❌ Error loading data:', error);
-      // Use mock data as fallback
-      if (activeTab === 'dosen') {
-        console.log('🔄 Fallback to mock dosen data');
-        setDosenData(mockDosenData);
-      } else {
-        console.log('🔄 Fallback to mock karyawan data');
-        setKaryawanData(mockKaryawanData);
-      }
+      console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const handlePeriodChange = (period) => {
-    console.log('📅 Period changed to:', period);
-    if (period === 'week') {
+    setSelectedPeriod(period);
+    if (period === 'today') {
+      setDateRange(getTodayRange());
+    } else if (period === 'week') {
       setDateRange(getWeekRange());
     } else if (period === 'month') {
       setDateRange(getMonthRange());
@@ -166,33 +127,32 @@ function Dashboard() {
   };
 
   const handleExport = async (format) => {
-    console.log('📥 Exporting as:', format);
-    await apiService.exportData(activeTab, format, dateRange.start, dateRange.end);
+    await apiService.exportData(format, activeTab, dateRange.start, dateRange.end);
   };
 
   const handleLogout = () => {
-    console.log('🚪 Logging out...');
     authService.logout();
     navigate('/login');
   };
 
   const stats = activeTab === 'dosen' ? {
     total: dosenData.length,
-    hadir: dosenData.reduce((sum, d) => sum + (d.totalHadir || 0), 0),
-    avgPersentase: dosenData.length > 0 
-      ? (dosenData.reduce((sum, d) => sum + (d.persentase || 0), 0) / dosenData.length).toFixed(1)
-      : '0.0'
+    hadir: dosenData.reduce((sum, d) => sum + d.totalHadir, 0),
+    avgPersentase: Math.round(dosenData.length > 0
+      ? dosenData.reduce((sum, d) => sum + (d.persentase || 0), 0) / dosenData.length
+      : 0)
   } : {
     total: karyawanData.length,
-    hadir: karyawanData.reduce((sum, k) => sum + (k.totalHadir || 0), 0),
-    terlambat: karyawanData.reduce((sum, k) => sum + (k.totalTerlambat || 0), 0),
-    avgPersentase: karyawanData.length > 0
-      ? (karyawanData.reduce((sum, k) => sum + (k.persentase || 0), 0) / karyawanData.length).toFixed(1)
-      : '0.0'
+    hadir: karyawanData.reduce((sum, k) => sum + k.totalHadir, 0),
+    terlambat: karyawanData.reduce((sum, k) => sum + k.totalTerlambat, 0),
+    avgPersentase: Math.round(karyawanData.length > 0
+      ? karyawanData.reduce((sum, k) => sum + (k.persentase || 0), 0) / karyawanData.length
+      : 0)
   };
 
   return (
     <div className="app-container">
+      {/* Header with Logout Button */}
       <div style={{
         background: 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)',
         color: 'white',
@@ -214,16 +174,13 @@ function Dashboard() {
               Dashboard Monitoring Kehadiran Dosen & Karyawan
             </p>
           </div>
-          
+
+          {/* User Info & Logout */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             {user && (
               <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: '14px', fontWeight: '600', margin: 0 }}>
-                  {user.name || user.nama || 'User'}
-                </p>
-                <p style={{ fontSize: '12px', opacity: 0.8, margin: 0 }}>
-                  {user.email || ''} | Role: {user.role || 'N/A'}
-                </p>
+                <p style={{ fontSize: '14px', fontWeight: '600', margin: 0 }}>{user.name || 'User'}</p>
+                <p style={{ fontSize: '12px', opacity: 0.8, margin: 0 }}>{user.email || ''}</p>
               </div>
             )}
             <button
@@ -255,8 +212,9 @@ function Dashboard() {
           </div>
         </div>
       </div>
-      
+
       <div className="main-content">
+        {/* Tab Navigation */}
         <div className="tab-navigation">
           <button
             onClick={() => setActiveTab('dosen')}
@@ -274,6 +232,7 @@ function Dashboard() {
           </button>
         </div>
 
+        {/* Stats Cards */}
         <div className="stats-grid">
           <StatsCard
             icon={Users}
@@ -304,14 +263,17 @@ function Dashboard() {
           />
         </div>
 
+        {/* Filter Panel */}
         <FilterPanel
           activeTab={activeTab}
+          selectedPeriod={selectedPeriod}
           dateRange={dateRange}
           onDateRangeChange={setDateRange}
           onPeriodChange={handlePeriodChange}
           onExport={handleExport}
         />
 
+        {/* Search Bar */}
         <div className="search-container">
           <div className="search-wrapper">
             <Search className="search-icon" size={20} />
@@ -325,6 +287,7 @@ function Dashboard() {
           </div>
         </div>
 
+        {/* Data Table */}
         <div className="table-container">
           {loading ? (
             <div className="loading-container">

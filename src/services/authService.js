@@ -16,13 +16,14 @@ export const authService = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Login gagal');
 
-    // Backend returns: { success, message, token, user }
-    const { token, user } = data;
+    // Backend returns: { success, message, data: { user, tokens } }
+    const { data: responseData } = data;
+    const { user, tokens } = responseData;
 
-    localStorage.setItem('token', token);
+    localStorage.setItem('token', tokens.access_token);
     localStorage.setItem('user', JSON.stringify(user));
 
-    return { token, user };
+    return { token: tokens.access_token, user };
   },
 
   // ==================== REGISTER ====================
@@ -31,6 +32,7 @@ export const authService = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        username: userData.username,
         email: userData.email,
         password: userData.password
       })
@@ -56,7 +58,7 @@ export const authService = {
 
   // ==================== VERIFY RESET CODE ====================
   async verifyResetCode(email, code) {
-    const res = await fetch(`${BASE_URL}/auth/verify-reset-code`, {
+    const res = await fetch(`${BASE_URL}/auth/verify-code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, code })

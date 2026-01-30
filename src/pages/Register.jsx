@@ -11,7 +11,7 @@ import '../styles/auth.css';
 const Register = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -31,12 +31,12 @@ const Register = () => {
   };
 
   const validateForm = () => {
-    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+    if (!formData.username || !formData.email || !formData.password || !formData.confirmPassword) {
       throw new Error('Semua field harus diisi');
     }
 
-    if (formData.password.length < 6) {
-      throw new Error('Password minimal 6 karakter');
+    if (formData.password.length < 8) {
+      throw new Error('Password minimal 8 karakter');
     }
 
     if (formData.password !== formData.confirmPassword) {
@@ -60,13 +60,13 @@ const Register = () => {
 
       // Call API
       await authService.register({
-        name: formData.name,
+        username: formData.username,
         email: formData.email,
         password: formData.password
       });
 
       setSuccess(true);
-      
+
       // Redirect ke login setelah 2 detik
       setTimeout(() => {
         navigate('/login');
@@ -122,7 +122,7 @@ const Register = () => {
           </div>
         )}
 
-        {/* Name Input */}
+        {/* Username Input */}
         <div style={{ marginBottom: '16px' }}>
           <label style={{
             display: 'block',
@@ -131,7 +131,7 @@ const Register = () => {
             color: '#374151',
             marginBottom: '8px'
           }}>
-            Nama Lengkap
+            Username
           </label>
           <div style={{ position: 'relative' }}>
             <User
@@ -146,10 +146,10 @@ const Register = () => {
             />
             <input
               type="text"
-              name="name"
-              value={formData.name}
+              name="username"
+              value={formData.username}
               onChange={handleChange}
-              placeholder="John Doe"
+              placeholder="johndoe123"
               style={{
                 width: '100%',
                 padding: '10px 12px 10px 44px',

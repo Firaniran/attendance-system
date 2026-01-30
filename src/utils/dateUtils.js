@@ -1,61 +1,50 @@
-// ==================== DATE UTILS ====================
-// File: src/utils/dateUtils.js
-
-// Format: YYYY-MM-DD
-const formatDate = (date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+export const formatDate = (date) => {
+  return new Date(date).toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  });
 };
 
-// Get week range (MASA LALU - untuk testing dengan data yang ada)
+export const formatTime = (datetime) => {
+  return new Date(datetime).toLocaleTimeString('id-ID', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+export const getTodayRange = () => {
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+
+  return {
+    start: today,
+    end: today
+  };
+};
+
 export const getWeekRange = () => {
-  // Gunakan tanggal di masa lalu yang pasti ada datanya
-  // Misalnya: 1-7 Januari 2025
-  const start = new Date('2025-01-01');
-  const end = new Date('2025-01-07');
-  
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
+
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+
   return {
-    start: formatDate(start),
-    end: formatDate(end)
+    start: startOfWeek.toISOString().split('T')[0],
+    end: endOfWeek.toISOString().split('T')[0]
   };
 };
 
-// Get month range (MASA LALU)
 export const getMonthRange = () => {
-  // Gunakan bulan di masa lalu
-  // Misalnya: Januari 2025
-  const start = new Date('2025-01-01');
-  const end = new Date('2025-01-31');
-  
-  return {
-    start: formatDate(start),
-    end: formatDate(end)
-  };
-};
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-// Get custom date range
-export const getCustomRange = (startDate, endDate) => {
   return {
-    start: formatDate(new Date(startDate)),
-    end: formatDate(new Date(endDate))
-  };
-};
-
-// Get today's date
-export const getToday = () => {
-  return formatDate(new Date());
-};
-
-// Get date range for last N days
-export const getLastNDays = (days) => {
-  const end = new Date();
-  const start = new Date();
-  start.setDate(end.getDate() - days);
-  
-  return {
-    start: formatDate(start),
-    end: formatDate(end)
+    start: start.toISOString().split('T')[0],
+    end: end.toISOString().split('T')[0]
   };
 };

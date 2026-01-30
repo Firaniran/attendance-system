@@ -1,143 +1,130 @@
-// src/services/apiService.js
+// ==================== API CONFIG ====================
+const BASE_URL = 'http://localhost:5000/api';
+// Updated to match Backend PORT and /api prefix
 
-const BASE_URL = "http://localhost:5000/api";
+const getAuthHeader = () => ({
+  Authorization: `Bearer ${localStorage.getItem('token')}`,
+  'Content-Type': 'application/json'
+});
 
-// ==================== AUTH HEADER ====================
-const getAuthHeader = () => {
-  const token = localStorage.getItem("token");
-
-  if (!token) {
-    console.error("❌ Token tidak ditemukan");
-    return null;
-  }
-
-  return {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json"
-  };
-};
-
-// ==================== HANDLE RESPONSE ====================
+// Helper to handle API response and auto-logout on 401/403
 const handleResponse = async (res) => {
-  let data = null;
-
-  try {
-    data = await res.json();
-  } catch {
-    data = null;
-  }
-
   if (res.status === 401 || res.status === 403) {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    window.location.href = "/login";
-    throw new Error("Session expired");
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+    throw new Error('Session expired');
   }
-
-  if (!res.ok) {
-    throw new Error(data?.message || res.statusText || "API Error");
-  }
-
-  return data;
+  if (!res.ok) throw new Error(res.statusText || 'API Error');
+  return res.json();
 };
 
-// ==================== API SERVICE ====================
 export const apiService = {
-
-  // ==================== DOSEN ATTENDANCE ====================
+  // ==================== ATTENDANCE DOSEN ====================
   async fetchDosenAttendance(startDate, endDate, dosenId = null) {
     try {
-      const headers = getAuthHeader();
-      if (!headers) return [];
-
       const params = new URLSearchParams({
         start_date: startDate,
-        end_date: endDate,
-        page: 1,
-        limit: 1000
+        end_date: endDate
       });
 
-      if (dosenId) params.append("dosen_id", dosenId);
+      if (dosenId) params.append('dosen_id', dosenId);
 
-      const url = `${BASE_URL}/attendance/dosen?${params.toString()}`;
-      console.log("📤 FETCH DOSEN:", url);
+      const res = await fetch(
+        `${BASE_URL}/attendance/dosen?${params.toString()}`,
+        {
+          method: 'GET',
+          headers: getAuthHeader()
+        }
+      );
 
-      const res = await fetch(url, { headers });
-      const data = await handleResponse(res);
-
-      return Array.isArray(data?.data) ? data.data : [];
-
+      const response = await handleResponse(res);
+      // Backend returns: { success, message, data: [...] }
+      return response?.data || [];
     } catch (err) {
-      console.error("❌ fetchDosenAttendance:", err.message);
+      console.error(err);
       return [];
     }
   },
 
-  // ==================== KARYAWAN ATTENDANCE ====================
+  // ==================== ATTENDANCE KARYAWAN ====================
   async fetchKaryawanAttendance(startDate, endDate, karyawanId = null) {
     try {
-      const headers = getAuthHeader();
-      if (!headers) return [];
-
       const params = new URLSearchParams({
         start_date: startDate,
-        end_date: endDate,
-        page: 1,
-        limit: 1000
+        end_date: endDate
       });
 
-      if (karyawanId) params.append("karyawan_id", karyawanId);
+      if (karyawanId) params.append('karyawan_id', karyawanId);
 
-      const url = `${BASE_URL}/attendance/karyawan?${params.toString()}`;
-      console.log("📤 FETCH KARYAWAN:", url);
+      const res = await fetch(
+        `${BASE_URL}/attendance/karyawan?${params.toString()}`,
+        {
+          method: 'GET',
+          headers: getAuthHeader()
+        }
+      );
 
-      const res = await fetch(url, { headers });
-      const data = await handleResponse(res);
-
-      return Array.isArray(data?.data) ? data.data : [];
-
+      const response = await handleResponse(res);
+      // Backend returns: { success, message, data: [...] }
+      return response?.data || [];
     } catch (err) {
-      console.error("❌ fetchKaryawanAttendance:", err.message);
+      console.error(err);
       return [];
     }
   },
 
   // ==================== EXPORT ====================
-  async exportData(jabatan, format, startDate, endDate) {
+  async exportData(format, jabatan, startDate, endDate) {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        window.location.href = "/login";
-        return;
-      }
-
       const params = new URLSearchParams({
         start_date: startDate,
-        end_date: endDate,
-        jabatan: jabatan?.toUpperCase()
+        end_date: endDate
       });
 
-      const url = `${BASE_URL}/export/${format}?${params.toString()}`;
-      console.log("📤 EXPORT:", url);
+      // Add jabatan filter (DOSEN or KARYAWAN)
+      if (jabatan) {
+        params.append('jabatan', jabatan.toUpperCase());
+      }
 
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await fetch(
+        `${BASE_URL}/export/${format}?${params.toString()}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
 
-      if (!res.ok) throw new Error("Export gagal");
+      if (res.status === 401 || res.status === 403) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        throw new Error('Session expired');
+      }
+
+      if (!res.ok) throw new Error('Export gagal');
 
       const blob = await res.blob();
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `rekap-${jabatan}-${startDate}.${format}`;
-      link.click();
+      const url = window.URL.createObjectURL(blob);
 
-      URL.revokeObjectURL(link.href);
-      console.log("✅ Export sukses");
+      // Determine file extension based on format
+      let extension = 'xlsx';
+      if (format === 'csv') extension = 'csv';
+      else if (format === 'pdf') extension = 'pdf';
 
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rekap-absensi-${jabatan || 'all'}.${extension}`;
+      document.body.appendChild(a);
+      a.click();
+
+      a.remove();
+      window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("❌ Export error:", err.message);
-      alert("Export gagal");
+      console.error(err);
+      alert('Export gagal. Silakan coba lagi.');
     }
   }
 };
