@@ -1,12 +1,12 @@
 // ==================== DASHBOARD PAGE ====================
 // File: src/pages/Dashboard.jsx
-
+import FilterPanel from '../components/FilterPanel';
+import { exportService } from '../services/exportService';
 import React, { useState, useEffect } from 'react';
 import { Users, Calendar, Clock, FileText, Search, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import StatsCard from '../components/StatsCard';
-import FilterPanel from '../components/FilterPanel';
 import DosenTable from '../components/DosenTable';
 import KaryawanTable from '../components/KaryawanTable';
 import { getTodayRange, getWeekRange, getMonthRange } from '../utils/dateUtils';
@@ -270,7 +270,6 @@ function Dashboard() {
           dateRange={dateRange}
           onDateRangeChange={setDateRange}
           onPeriodChange={handlePeriodChange}
-          onExport={handleExport}
         />
 
         {/* Search Bar */}
