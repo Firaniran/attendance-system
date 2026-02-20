@@ -1,6 +1,5 @@
 // ==================== API CONFIG ====================
 const BASE_URL = 'http://localhost:5000/api';
-// Updated to match Backend PORT and /api prefix
 
 const getAuthHeader = () => ({
   Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -20,18 +19,17 @@ const handleResponse = async (res) => {
 };
 
 export const apiService = {
-  // ==================== ATTENDANCE DOSEN ====================
-  async fetchDosenAttendance(startDate, endDate, dosenId = null) {
+  // ==================== ATTENDANCE SUMMARY (ALL) ====================
+  async fetchAllAttendance(startDate, endDate) {
     try {
       const params = new URLSearchParams({
-        start_date: startDate,
-        end_date: endDate
+        startDate: startDate,
+        endDate: endDate,
+        limit: 200
       });
 
-      if (dosenId) params.append('dosen_id', dosenId);
-
       const res = await fetch(
-        `${BASE_URL}/attendance/dosen?${params.toString()}`,
+        `${BASE_URL}/attendance/summary?${params.toString()}`,
         {
           method: 'GET',
           headers: getAuthHeader()
@@ -39,37 +37,9 @@ export const apiService = {
       );
 
       const response = await handleResponse(res);
-      // Backend returns: { success, message, data: [...] }
       return response?.data || [];
     } catch (err) {
-      console.error(err);
-      return [];
-    }
-  },
-
-  // ==================== ATTENDANCE KARYAWAN ====================
-  async fetchKaryawanAttendance(startDate, endDate, karyawanId = null) {
-    try {
-      const params = new URLSearchParams({
-        start_date: startDate,
-        end_date: endDate
-      });
-
-      if (karyawanId) params.append('karyawan_id', karyawanId);
-
-      const res = await fetch(
-        `${BASE_URL}/attendance/karyawan?${params.toString()}`,
-        {
-          method: 'GET',
-          headers: getAuthHeader()
-        }
-      );
-
-      const response = await handleResponse(res);
-      // Backend returns: { success, message, data: [...] }
-      return response?.data || [];
-    } catch (err) {
-      console.error(err);
+      console.error('Error fetching attendance:', err);
       return [];
     }
   },

@@ -13,18 +13,18 @@ export const exportService = {
 
       // Create CSV content (Excel compatible)
       let csvContent = '';
-      
+
       if (type === 'dosen') {
         // Header untuk Dosen
-        csvContent = 'NIP,Nama Dosen,Mata Kuliah,Total Hadir,Total Mengajar,Persentase,Absensi Terakhir\n';
-        
+        csvContent = 'ID,Nama Dosen,Mata Kuliah,Total Hadir,Total Mengajar,Persentase,Absensi Terakhir\n';
+
         processedData.forEach(dosen => {
           csvContent += `"${dosen.nip}","${dosen.nama}","${dosen.position || '-'}",${dosen.totalHadir},${dosen.totalHariKerja},${dosen.persentase}%,"${dosen.lastAttendance}"\n`;
         });
       } else {
         // Header untuk Karyawan
-        csvContent = 'NIP,Nama Karyawan,Jabatan,Total Hadir,Total Hari Kerja,Total Terlambat,Persentase,Absensi Terakhir\n';
-        
+        csvContent = 'ID,Nama Karyawan,Jabatan,Total Hadir,Total Hari Kerja,Total Terlambat,Persentase,Absensi Terakhir\n';
+
         processedData.forEach(karyawan => {
           csvContent += `"${karyawan.nip}","${karyawan.nama}","${karyawan.position || karyawan.department}",${karyawan.totalHadir},${karyawan.totalHariKerja},${karyawan.totalTerlambat},${karyawan.persentase}%,"${karyawan.lastAttendance}"\n`;
         });
@@ -32,7 +32,7 @@ export const exportService = {
 
       // Download file
       this.downloadFile(csvContent, `rekap-absensi-${type}-${startDate}-${endDate}.csv`, 'text/csv');
-      
+
       return { success: true, message: 'Data berhasil diexport ke Excel' };
     } catch (error) {
       console.error('Error exporting to Excel:', error);
@@ -61,7 +61,7 @@ export const exportService = {
       printWindow.document.write(htmlContent);
       printWindow.document.close();
       printWindow.focus();
-      
+
       // Wait for content to load then print
       setTimeout(() => {
         printWindow.print();
@@ -78,9 +78,9 @@ export const exportService = {
   // Generate HTML Report for PDF
   generateHTMLReport(type, data, startDate, endDate) {
     const title = type === 'dosen' ? 'Rekap Absensi Dosen' : 'Rekap Absensi Karyawan';
-    
+
     let tableRows = '';
-    
+
     if (type === 'dosen') {
       data.forEach((dosen, index) => {
         tableRows += `
@@ -182,7 +182,7 @@ export const exportService = {
           <thead>
             <tr>
               <th>No</th>
-              <th>NIP</th>
+              <th>ID</th>
               <th>Nama</th>
               <th>${type === 'dosen' ? 'Mata Kuliah' : 'Jabatan'}</th>
               <th>Hadir</th>
@@ -198,13 +198,13 @@ export const exportService = {
         </table>
         
         <div class="footer">
-          <p>Dicetak pada: ${new Date().toLocaleDateString('id-ID', { 
-            day: '2-digit', 
-            month: 'long', 
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          })}</p>
+          <p>Dicetak pada: ${new Date().toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })}</p>
           <p>Data dari Fingerspot.io</p>
         </div>
       </body>
@@ -241,20 +241,20 @@ export const exportService = {
       const processedData = fingerspotService.calculateStatistics(rawData, startDate, endDate);
 
       let csvContent = '';
-      
+
       // Header
-      csvContent = 'Tanggal,NIP,Nama,Jam Masuk,Jam Keluar,Status\n';
-      
+      csvContent = 'Tanggal,ID,Nama,Jam Masuk,Jam Keluar,Status\n';
+
       // Detail per record
       processedData.forEach(user => {
         const recordsByDate = new Map();
-        
+
         // Group by date
         user.records.forEach(record => {
           if (!recordsByDate.has(record.date)) {
             recordsByDate.set(record.date, { checkIn: '-', checkOut: '-' });
           }
-          
+
           const dateRecords = recordsByDate.get(record.date);
           if (record.status === 'Check In' && dateRecords.checkIn === '-') {
             dateRecords.checkIn = record.time;
@@ -271,7 +271,7 @@ export const exportService = {
       });
 
       this.downloadFile(csvContent, `rekap-detail-${type}-${startDate}-${endDate}.csv`, 'text/csv');
-      
+
       return { success: true, message: 'Data detail berhasil diexport' };
     } catch (error) {
       console.error('Error exporting detailed data:', error);
