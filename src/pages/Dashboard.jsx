@@ -1,133 +1,79 @@
 // ==================== DASHBOARD PAGE ====================
 // File: src/pages/Dashboard.jsx
-import FilterPanel from '../components/FilterPanel';
-import { exportService } from '../services/exportService';
-import React, { useState, useEffect } from 'react';
-import { Users, Calendar, Clock, FileText, Search, LogOut } from 'lucide-react';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { Users, Calendar, Clock, FileText, Search, LogOut, Briefcase } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/Header';
 import StatsCard from '../components/StatsCard';
 import DosenTable from '../components/DosenTable';
 import KaryawanTable from '../components/KaryawanTable';
+import FilterPanel from '../components/FilterPanel';
 import { getTodayRange, getWeekRange, getMonthRange } from '../utils/dateUtils';
 import { apiService } from '../services/apiService';
 import { authService } from '../services/authService';
 import '../styles/main.css';
 
-// ==================== MOCK DATA ====================
-const mockDosenData = [
-  {
-    id: 1,
-    nama: 'Aziz Azidani, M.Kom',
-    nip: '198501012010011001',
-    matakuliah: 'Kongfigurasi Jaringan',
-    totalHadir: 18,
-    totalMengajar: 20,
-    persentase: 90,
-    lastAttendance: '2025-01-07 14:30'
-  },
-  {
-    id: 2,
-    nama: 'Ilham Akhsani, M.Kom',
-    nip: '197803152008012002',
-    matakuliah: 'Basis Data',
-    totalHadir: 15,
-    totalMengajar: 16,
-    persentase: 93.75,
-    lastAttendance: '2025-01-07 10:15'
-  },
-];
-
-const mockKaryawanData = [
-  {
-    id: 1,
-    nama: 'Budi Santoso',
-    nip: '199001012015011001',
-    jabatan: 'Staff IT',
-    totalHadir: 20,
-    totalHariKerja: 22,
-    totalTerlambat: 3,
-    persentase: 90.9,
-    lastCheckIn: '2025-01-07 08:15',
-    lastCheckOut: '2025-01-06 17:05'
-  },
-  {
-    id: 2,
-    nama: 'Dewi Lestari',
-    nip: '198505102016012001',
-    jabatan: 'Staff Akademik',
-    totalHadir: 21,
-    totalHariKerja: 22,
-    totalTerlambat: 1,
-    persentase: 95.45,
-    lastCheckIn: '2025-01-07 07:55',
-    lastCheckOut: '2025-01-06 17:10'
-  },
-  {
-    id: 3,
-    nama: 'Andi Wijaya',
-    nip: '199203202017011002',
-    jabatan: 'Staff Keuangan',
-    totalHadir: 19,
-    totalHariKerja: 22,
-    totalTerlambat: 5,
-    persentase: 86.36,
-    lastCheckIn: '2025-01-07 08:25',
-    lastCheckOut: '2025-01-06 17:00'
-  }
-];
+// ==================== HELPER: SESI DARI JAM ====================
+export function getSesiFromTime(timeStr) {
+  if (!timeStr) return null;
+  const date = new Date(timeStr.replace(' ', 'T'));
+  if (isNaN(date)) return null;
+  const hour = date.getHours();
+  if (hour >= 8 && hour < 16) return 'pagi';
+  if (hour >= 16 && hour <= 21) return 'malam';
+  return null;
+}
 
 // ==================== DASHBOARD COMPONENT ====================
 function Dashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dosen');
+  const [activeSession, setActiveSession] = useState('all'); // 'all' | 'pagi' | 'malam'
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPeriod, setSelectedPeriod] = useState('today');
   const [dateRange, setDateRange] = useState(getTodayRange());
-  const [dosenData, setDosenData] = useState(mockDosenData);
-  const [karyawanData, setKaryawanData] = useState(mockKaryawanData);
+  const [dosenData, setDosenData] = useState([]);
+  const [karyawanData, setKaryawanData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Get current user info
     const currentUser = authService.getCurrentUser();
     setUser(currentUser);
+  }, []);
 
-    // Load data
-    loadData();
-  }, [activeTab, dateRange]);
-
-  const loadData = async () => {
+  // Reload data setiap kali tab atau dateRange berubah
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       if (activeTab === 'dosen') {
         const data = await apiService.fetchDosenAttendance(dateRange.start, dateRange.end);
-        if (data) setDosenData(data);
+        setDosenData(data || []);
       } else {
         const data = await apiService.fetchKaryawanAttendance(dateRange.start, dateRange.end);
-        if (data) setKaryawanData(data);
+        setKaryawanData(data || []);
       }
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, dateRange]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Reset session filter saat pindah ke tab karyawan
+  useEffect(() => {
+    if (activeTab === 'karyawan') setActiveSession('all');
+  }, [activeTab]);
 
   const handlePeriodChange = (period) => {
     setSelectedPeriod(period);
-    if (period === 'today') {
-      setDateRange(getTodayRange());
-    } else if (period === 'week') {
-      setDateRange(getWeekRange());
-    } else if (period === 'month') {
-      setDateRange(getMonthRange());
-    }
-  };
-
-  const handleExport = async (format) => {
-    await apiService.exportData(format, activeTab, dateRange.start, dateRange.end);
+    if (period === 'today') setDateRange(getTodayRange());
+    else if (period === 'week') setDateRange(getWeekRange());
+    else if (period === 'month') setDateRange(getMonthRange());
   };
 
   const handleLogout = () => {
@@ -135,77 +81,71 @@ function Dashboard() {
     navigate('/login');
   };
 
-  const stats = activeTab === 'dosen' ? {
-    total: dosenData.length,
-    hadir: dosenData.reduce((sum, d) => sum + d.totalHadir, 0),
-    avgPersentase: Math.round(dosenData.length > 0
-      ? dosenData.reduce((sum, d) => sum + (d.persentase || 0), 0) / dosenData.length
-      : 0)
-  } : {
-    total: karyawanData.length,
-    hadir: karyawanData.reduce((sum, k) => sum + k.totalHadir, 0),
-    terlambat: karyawanData.reduce((sum, k) => sum + k.totalTerlambat, 0),
-    avgPersentase: Math.round(karyawanData.length > 0
-      ? karyawanData.reduce((sum, k) => sum + (k.persentase || 0), 0) / karyawanData.length
-      : 0)
-  };
+  // ==================== FILTER SESI UNTUK DOSEN ====================
+  // Sesi ditentukan dari field 'sesi' di data, atau fallback ke jam lastCheckIn
+  const filteredDosenData = dosenData.filter((d) => {
+    if (activeSession === 'all') return true;
+    const sesi = d.sesi || getSesiFromTime(d.lastCheckIn);
+    return sesi === activeSession;
+  });
+
+  // ==================== STATS ====================
+  const stats =
+    activeTab === 'dosen'
+      ? {
+          total: filteredDosenData.length,
+          hadir: filteredDosenData.reduce((s, d) => s + (d.totalHadir || 0), 0),
+          terlambat: filteredDosenData.reduce((s, d) => s + (d.totalTerlambat || 0), 0),
+          avgPersentase:
+            filteredDosenData.length > 0
+              ? Math.round(
+                  filteredDosenData.reduce((s, d) => {
+                    const pct =
+                      d.persentase ??
+                      (d.totalHariKerja > 0
+                        ? (d.totalHadir / d.totalHariKerja) * 100
+                        : 0);
+                    return s + pct;
+                  }, 0) / filteredDosenData.length
+                )
+              : 0,
+        }
+      : {
+          total: karyawanData.length,
+          hadir: karyawanData.reduce((s, k) => s + (k.totalHadir || 0), 0),
+          terlambat: karyawanData.reduce((s, k) => s + (k.totalTerlambat || 0), 0),
+          avgPersentase:
+            karyawanData.length > 0
+              ? Math.round(
+                  karyawanData.reduce((s, k) => {
+                    const pct =
+                      k.persentase ??
+                      (k.totalHariKerja > 0
+                        ? (k.totalHadir / k.totalHariKerja) * 100
+                        : 0);
+                    return s + pct;
+                  }, 0) / karyawanData.length
+                )
+              : 0,
+        };
 
   return (
     <div className="app-container">
-      {/* Header with Logout Button */}
-      <div style={{
-        background: 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)',
-        color: 'white',
-        padding: '24px',
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-      }}>
-        <div style={{
-          maxWidth: '1280px',
-          margin: '0 auto',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
+      {/* ===== HEADER ===== */}
+      <div className="dashboard-header">
+        <div className="header-inner">
           <div>
-            <h1 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '8px', margin: 0 }}>
-              Sistem Rekap Absensi Kampus
-            </h1>
-            <p style={{ color: '#bfdbfe', fontSize: '14px', margin: 0 }}>
-              Dashboard Monitoring Kehadiran Dosen & Karyawan
-            </p>
+            <h1 className="header-title">Sistem Rekap Absensi Kampus</h1>
+            <p className="header-subtitle">Dashboard Monitoring Kehadiran Dosen &amp; Karyawan</p>
           </div>
-
-          {/* User Info & Logout */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="header-right">
             {user && (
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: '14px', fontWeight: '600', margin: 0 }}>{user.name || 'User'}</p>
-                <p style={{ fontSize: '12px', opacity: 0.8, margin: 0 }}>{user.email || ''}</p>
+              <div className="user-info">
+                <p className="user-name">{user.name || user.username || 'User'}</p>
+                <p className="user-email">{user.email || ''}</p>
               </div>
             )}
-            <button
-              onClick={handleLogout}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                color: 'white',
-                padding: '8px 16px',
-                borderRadius: '8px',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-              }}
-            >
+            <button className="logout-btn" onClick={handleLogout}>
               <LogOut size={16} />
               Logout
             </button>
@@ -214,25 +154,25 @@ function Dashboard() {
       </div>
 
       <div className="main-content">
-        {/* Tab Navigation */}
+        {/* ===== TAB NAVIGATION ===== */}
         <div className="tab-navigation">
           <button
             onClick={() => setActiveTab('dosen')}
             className={`tab-button ${activeTab === 'dosen' ? 'active' : ''}`}
           >
-            <Users size={20} />
+            <Users size={18} />
             Rekap Dosen
           </button>
           <button
             onClick={() => setActiveTab('karyawan')}
             className={`tab-button ${activeTab === 'karyawan' ? 'active' : ''}`}
           >
-            <Clock size={20} />
+            <Briefcase size={18} />
             Rekap Karyawan
           </button>
         </div>
 
-        {/* Stats Cards */}
+        {/* ===== STATS CARDS ===== */}
         <div className="stats-grid">
           <StatsCard
             icon={Users}
@@ -246,15 +186,13 @@ function Dashboard() {
             value={stats.hadir}
             color="#10B981"
           />
-          {activeTab === 'karyawan' && (
-            <StatsCard
-              icon={Clock}
-              title="Total Keterlambatan"
-              value={stats.terlambat}
-              subtitle="kali"
-              color="#EF4444"
-            />
-          )}
+          <StatsCard
+            icon={Clock}
+            title="Total Keterlambatan"
+            value={stats.terlambat}
+            subtitle="kali"
+            color="#EF4444"
+          />
           <StatsCard
             icon={FileText}
             title="Rata-rata Kehadiran"
@@ -263,22 +201,28 @@ function Dashboard() {
           />
         </div>
 
-        {/* Filter Panel */}
+        {/* ===== FILTER PANEL ===== */}
         <FilterPanel
           activeTab={activeTab}
+          activeSession={activeSession}
+          onSessionChange={setActiveSession}
           selectedPeriod={selectedPeriod}
           dateRange={dateRange}
           onDateRangeChange={setDateRange}
           onPeriodChange={handlePeriodChange}
         />
 
-        {/* Search Bar */}
+        {/* ===== SEARCH BAR ===== */}
         <div className="search-container">
           <div className="search-wrapper">
             <Search className="search-icon" size={20} />
             <input
               type="text"
-              placeholder={`Cari ${activeTab === 'dosen' ? 'dosen (nama, NIP, mata kuliah)' : 'karyawan (nama, NIP, jabatan)'}...`}
+              placeholder={
+                activeTab === 'dosen'
+                  ? 'Cari dosen (nama, NIP)...'
+                  : 'Cari karyawan (nama, NIP)...'
+              }
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
@@ -286,7 +230,7 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* Data Table */}
+        {/* ===== DATA TABLE ===== */}
         <div className="table-container">
           {loading ? (
             <div className="loading-container">
@@ -294,7 +238,7 @@ function Dashboard() {
               <div className="loading-text">Memuat data...</div>
             </div>
           ) : activeTab === 'dosen' ? (
-            <DosenTable data={dosenData} searchTerm={searchTerm} />
+            <DosenTable data={filteredDosenData} searchTerm={searchTerm} />
           ) : (
             <KaryawanTable data={karyawanData} searchTerm={searchTerm} />
           )}

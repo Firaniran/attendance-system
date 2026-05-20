@@ -1,19 +1,53 @@
-// ==================== FILTER PANEL WITH EXPORT ====================
+// ==================== FILTER PANEL WITH SESSION TOGGLE ====================
 // File: src/components/FilterPanel.jsx
 
 import React, { useState } from 'react';
-import { Download, FileSpreadsheet, FileText, Database } from 'lucide-react';
+import { Download, FileSpreadsheet, FileText, Database, Sun, Moon, LayoutGrid } from 'lucide-react';
 import { exportService } from '../services/exportService';
 
-const FilterPanel = ({ activeTab, dateRange, onDateRangeChange, onPeriodChange }) => {
-  const [exporting, setExporting] = useState(null); // Track which export is in progress
+// ==================== SESSION INFO CONFIG ====================
+const SESSION_CONFIG = {
+  all: {
+    label: 'Semua Sesi',
+    icon: LayoutGrid,
+    description: 'Menampilkan semua sesi — pagi (08.00–15.00) dan malam (16.00–21.00)',
+    className: 'session-btn-all',
+    infoClassName: 'session-info-all',
+  },
+  pagi: {
+    label: 'Kelas Pagi',
+    sublabel: '08.00 – 15.00',
+    icon: Sun,
+    description: 'Menampilkan kelas pagi — jam masuk antara 08.00 hingga 15.00',
+    className: 'session-btn-pagi',
+    infoClassName: 'session-info-pagi',
+  },
+  malam: {
+    label: 'Kelas Malam',
+    sublabel: '16.00 – 21.00',
+    icon: Moon,
+    description: 'Menampilkan kelas malam — jam masuk antara 16.00 hingga 21.00',
+    className: 'session-btn-malam',
+    infoClassName: 'session-info-malam',
+  },
+};
+
+// ==================== FILTER PANEL COMPONENT ====================
+const FilterPanel = ({
+  activeTab,
+  activeSession,
+  onSessionChange,
+  selectedPeriod,
+  dateRange,
+  onDateRangeChange,
+  onPeriodChange,
+}) => {
+  const [exporting, setExporting] = useState(null);
 
   const handleExport = async (format) => {
     setExporting(format);
-    
     try {
       let result;
-      
       switch (format) {
         case 'excel':
           result = await exportService.exportToExcel(activeTab, dateRange.start, dateRange.end);
@@ -30,11 +64,7 @@ const FilterPanel = ({ activeTab, dateRange, onDateRangeChange, onPeriodChange }
         default:
           throw new Error('Format tidak didukung');
       }
-
-      // Show success notification
-      if (result.success) {
-        alert(`✅ ${result.message}`);
-      }
+      if (result.success) alert(`✅ ${result.message}`);
     } catch (error) {
       console.error('Export error:', error);
       alert(`❌ ${error.message || 'Gagal mengexport data. Silakan coba lagi.'}`);
@@ -43,222 +73,148 @@ const FilterPanel = ({ activeTab, dateRange, onDateRangeChange, onPeriodChange }
     }
   };
 
+  const currentSession = SESSION_CONFIG[activeSession];
+
   return (
-    <div style={{
-      backgroundColor: 'white',
-      borderRadius: '8px',
-      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-      padding: '24px',
-      marginBottom: '24px'
-    }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-        {/* Periode Dropdown */}
-        <div>
-          <label style={{ 
-            display: 'block', 
-            fontSize: '14px', 
-            fontWeight: '500', 
-            color: '#374151', 
-            marginBottom: '8px' 
-          }}>
-            Periode
-          </label>
-          <select 
-            onChange={(e) => onPeriodChange(e.target.value)}
-            style={{
-              width: '100%',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              padding: '8px 12px',
-              fontSize: '14px',
-              cursor: 'pointer'
-            }}
-          >
-            <option value="week">Minggu Ini</option>
-            <option value="month">Bulan Ini</option>
-            <option value="custom">Custom</option>
-          </select>
-        </div>
-        
-        {/* Tanggal Mulai */}
-        <div>
-          <label style={{ 
-            display: 'block', 
-            fontSize: '14px', 
-            fontWeight: '500', 
-            color: '#374151', 
-            marginBottom: '8px' 
-          }}>
-            Tanggal Mulai
-          </label>
-          <input 
-            type="date" 
-            value={dateRange.start}
-            onChange={(e) => onDateRangeChange({ ...dateRange, start: e.target.value })}
-            style={{
-              width: '100%',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              padding: '8px 12px',
-              fontSize: '14px'
-            }}
-          />
-        </div>
-        
-        {/* Tanggal Akhir */}
-        <div>
-          <label style={{ 
-            display: 'block', 
-            fontSize: '14px', 
-            fontWeight: '500', 
-            color: '#374151', 
-            marginBottom: '8px' 
-          }}>
-            Tanggal Akhir
-          </label>
-          <input 
-            type="date" 
-            value={dateRange.end}
-            onChange={(e) => onDateRangeChange({ ...dateRange, end: e.target.value })}
-            style={{
-              width: '100%',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              padding: '8px 12px',
-              fontSize: '14px'
-            }}
-          />
-        </div>
-        
-        {/* Export Buttons */}
-        <div>
-          <label style={{ 
-            display: 'block', 
-            fontSize: '14px', 
-            fontWeight: '500', 
-            color: '#374151', 
-            marginBottom: '8px' 
-          }}>
-            Export dari Fingerspot
-          </label>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {/* Excel Button */}
-            <button
-              onClick={() => handleExport('excel')}
-              disabled={exporting !== null}
-              style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '4px',
-                backgroundColor: exporting === 'excel' ? '#9ca3af' : '#16a34a',
-                color: 'white',
-                padding: '8px 8px',
-                borderRadius: '6px',
-                border: 'none',
-                fontSize: '13px',
-                fontWeight: '500',
-                cursor: exporting !== null ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s'
-              }}
-              title="Export ke Excel"
+    <div className="filter-panel">
+      {/* ===== BARIS 1: PERIODE & TANGGAL ===== */}
+      <div className="filter-section">
+        <h3 className="filter-section-title">
+          <span className="filter-section-icon">📅</span>
+          Periode &amp; Tanggal
+        </h3>
+        <div className="filter-row">
+          <div className="filter-field">
+            <label className="filter-label">Periode</label>
+            <select
+              value={selectedPeriod}
+              onChange={(e) => onPeriodChange(e.target.value)}
+              className="filter-select"
             >
-              {exporting === 'excel' ? (
-                <>⏳</>
-              ) : (
-                <>
-                  <FileSpreadsheet size={16} />
-                  <span>Excel</span>
-                </>
-              )}
-            </button>
-
-            {/* PDF Button */}
-            <button
-              onClick={() => handleExport('pdf')}
-              disabled={exporting !== null}
-              style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '4px',
-                backgroundColor: exporting === 'pdf' ? '#9ca3af' : '#dc2626',
-                color: 'white',
-                padding: '8px 8px',
-                borderRadius: '6px',
-                border: 'none',
-                fontSize: '13px',
-                fontWeight: '500',
-                cursor: exporting !== null ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s'
-              }}
-              title="Export ke PDF"
-            >
-              {exporting === 'pdf' ? (
-                <>⏳</>
-              ) : (
-                <>
-                  <FileText size={16} />
-                  <span>PDF</span>
-                </>
-              )}
-            </button>
-
-            {/* Detail Button */}
-            <button
-              onClick={() => handleExport('detail')}
-              disabled={exporting !== null}
-              style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '4px',
-                backgroundColor: exporting === 'detail' ? '#9ca3af' : '#2563eb',
-                color: 'white',
-                padding: '8px 8px',
-                borderRadius: '6px',
-                border: 'none',
-                fontSize: '13px',
-                fontWeight: '500',
-                cursor: exporting !== null ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s'
-              }}
-              title="Export Detail per Hari"
-            >
-              {exporting === 'detail' ? (
-                <>⏳</>
-              ) : (
-                <>
-                  <Database size={16} />
-                  <span>Detail</span>
-                </>
-              )}
-            </button>
+              <option value="today">Hari Ini</option>
+              <option value="week">Minggu Ini</option>
+              <option value="month">Bulan Ini</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div className="filter-field">
+            <label className="filter-label">Tanggal Mulai</label>
+            <input
+              type="date"
+              value={dateRange.start}
+              onChange={(e) => onDateRangeChange({ ...dateRange, start: e.target.value })}
+              className="filter-input"
+            />
+          </div>
+          <div className="filter-field">
+            <label className="filter-label">Tanggal Akhir</label>
+            <input
+              type="date"
+              value={dateRange.end}
+              onChange={(e) => onDateRangeChange({ ...dateRange, end: e.target.value })}
+              className="filter-input"
+            />
           </div>
         </div>
       </div>
 
-      {/* Info Text */}
-      <div style={{
-        marginTop: '12px',
-        padding: '8px 12px',
-        backgroundColor: '#eff6ff',
-        borderRadius: '6px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px'
-      }}>
-        <Download size={16} style={{ color: '#2563eb' }} />
-        <p style={{ 
-          margin: 0, 
-          fontSize: '12px', 
-          color: '#1e40af' 
-        }}>
-          Data akan diambil langsung dari Fingerspot.io sesuai periode yang dipilih
-        </p>
+      {/* ===== DIVIDER ===== */}
+      <div className="filter-divider" />
+
+      {/* ===== BARIS 2: FILTER SESI (hanya untuk dosen) ===== */}
+      {activeTab === 'dosen' && (
+        <>
+          <div className="filter-section">
+            <h3 className="filter-section-title">
+              <span className="filter-section-icon">🕐</span>
+              Sesi Kelas
+            </h3>
+
+            <div className="session-toggle-group">
+              {Object.entries(SESSION_CONFIG).map(([key, cfg]) => {
+                const Icon = cfg.icon;
+                const isActive = activeSession === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => onSessionChange(key)}
+                    className={`session-toggle-btn ${cfg.className} ${isActive ? 'active' : ''}`}
+                  >
+                    <span className="session-btn-icon">
+                      <Icon size={18} />
+                    </span>
+                    <span className="session-btn-content">
+                      <span className="session-btn-label">{cfg.label}</span>
+                      {cfg.sublabel && (
+                        <span className="session-btn-sublabel">{cfg.sublabel}</span>
+                      )}
+                    </span>
+                    {isActive && <span className="session-active-dot" />}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Info sesi aktif */}
+            <div className={`session-info-banner ${currentSession.infoClassName}`}>
+              <span className="session-info-icon">
+                {activeSession === 'pagi' ? <Sun size={15} /> : activeSession === 'malam' ? <Moon size={15} /> : <LayoutGrid size={15} />}
+              </span>
+              <span className="session-info-text">{currentSession.description}</span>
+            </div>
+          </div>
+
+          <div className="filter-divider" />
+        </>
+      )}
+
+      {/* ===== BARIS 3: EXPORT ===== */}
+      <div className="filter-section">
+        <h3 className="filter-section-title">
+          <span className="filter-section-icon">📤</span>
+          Export Laporan dari Fingerspot
+        </h3>
+        <div className="export-btn-group">
+          <button
+            onClick={() => handleExport('excel')}
+            disabled={exporting !== null}
+            className="export-btn export-btn-excel"
+            title="Export ke Excel"
+          >
+            <FileSpreadsheet size={16} />
+            {exporting === 'excel' ? 'Mengexport...' : 'Excel'}
+          </button>
+
+          <button
+            onClick={() => handleExport('pdf')}
+            disabled={exporting !== null}
+            className="export-btn export-btn-pdf"
+            title="Export ke PDF"
+          >
+            <FileText size={16} />
+            {exporting === 'pdf' ? 'Mengexport...' : 'PDF'}
+          </button>
+
+          <button
+            onClick={() => handleExport('detail')}
+            disabled={exporting !== null}
+            className="export-btn export-btn-detail"
+            title="Export Detail per Hari"
+          >
+            <Database size={16} />
+            {exporting === 'detail' ? 'Mengexport...' : 'Detail'}
+          </button>
+
+          <button
+            onClick={() => handleExport('csv')}
+            disabled={exporting !== null}
+            className="export-btn export-btn-csv"
+            title="Export ke CSV"
+          >
+            <Download size={16} />
+            {exporting === 'csv' ? 'Mengexport...' : 'CSV'}
+          </button>
+        </div>
       </div>
     </div>
   );

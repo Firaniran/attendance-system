@@ -1,4 +1,6 @@
-// ==================== API CONFIG ====================
+// ==================== API SERVICE ====================
+// File: src/services/apiService.js
+
 const BASE_URL = 'http://localhost:5000/api';
 
 const getAuthHeader = () => ({
@@ -6,7 +8,7 @@ const getAuthHeader = () => ({
   'Content-Type': 'application/json'
 });
 
-// Helper to handle API response and auto-logout on 401/403
+// Auto-logout jika token expired
 const handleResponse = async (res) => {
   if (res.status === 401 || res.status === 403) {
     localStorage.removeItem('token');
@@ -19,27 +21,53 @@ const handleResponse = async (res) => {
 };
 
 export const apiService = {
-  // ==================== ATTENDANCE SUMMARY (ALL) ====================
+
+  // ==================== FETCH SEMUA ATTENDANCE ====================
   async fetchAllAttendance(startDate, endDate) {
     try {
       const params = new URLSearchParams({
-        startDate: startDate,
-        endDate: endDate,
+        startDate,
+        endDate,
         limit: 200
       });
 
       const res = await fetch(
         `${BASE_URL}/attendance/summary?${params.toString()}`,
-        {
-          method: 'GET',
-          headers: getAuthHeader()
-        }
+        { method: 'GET', headers: getAuthHeader() }
       );
 
       const response = await handleResponse(res);
       return response?.data || [];
     } catch (err) {
       console.error('Error fetching attendance:', err);
+      return [];
+    }
+  },
+
+  // ==================== FETCH DOSEN ====================
+  // Mengambil semua data lalu filter jabatan DOSEN di sisi client
+  async fetchDosenAttendance(startDate, endDate) {
+    try {
+      const all = await this.fetchAllAttendance(startDate, endDate);
+      return all.filter(
+        (d) => (d.jabatan || '').toUpperCase() === 'DOSEN'
+      );
+    } catch (err) {
+      console.error('Error fetching dosen attendance:', err);
+      return [];
+    }
+  },
+
+  // ==================== FETCH KARYAWAN ====================
+  // Mengambil semua data lalu filter jabatan bukan DOSEN
+  async fetchKaryawanAttendance(startDate, endDate) {
+    try {
+      const all = await this.fetchAllAttendance(startDate, endDate);
+      return all.filter(
+        (d) => (d.jabatan || '').toUpperCase() !== 'DOSEN'
+      );
+    } catch (err) {
+      console.error('Error fetching karyawan attendance:', err);
       return [];
     }
   },
@@ -52,18 +80,13 @@ export const apiService = {
         end_date: endDate
       });
 
-      // Add jabatan filter (DOSEN or KARYAWAN)
-      if (jabatan) {
-        params.append('jabatan', jabatan.toUpperCase());
-      }
+      if (jabatan) params.append('jabatan', jabatan.toUpperCase());
 
       const res = await fetch(
         `${BASE_URL}/export/${format}?${params.toString()}`,
         {
           method: 'GET',
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         }
       );
 
@@ -79,7 +102,6 @@ export const apiService = {
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
 
-      // Determine file extension based on format
       let extension = 'xlsx';
       if (format === 'csv') extension = 'csv';
       else if (format === 'pdf') extension = 'pdf';
@@ -89,12 +111,13 @@ export const apiService = {
       a.download = `rekap-absensi-${jabatan || 'all'}.${extension}`;
       document.body.appendChild(a);
       a.click();
-
       a.remove();
       window.URL.revokeObjectURL(url);
+
+      return { success: true, message: `Export ${extension.toUpperCase()} berhasil didownload.` };
     } catch (err) {
       console.error(err);
-      alert('Export gagal. Silakan coba lagi.');
+      throw new Error('Export gagal. Silakan coba lagi.');
     }
   }
 };
