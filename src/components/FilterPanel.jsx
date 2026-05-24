@@ -196,16 +196,6 @@ const FilterPanel = ({
           </button>
 
           <button
-            onClick={() => handleExport('detail')}
-            disabled={exporting !== null}
-            className="export-btn export-btn-detail"
-            title="Export Detail per Hari"
-          >
-            <Database size={16} />
-            {exporting === 'detail' ? 'Mengexport...' : 'Detail'}
-          </button>
-
-          <button
             onClick={() => handleExport('csv')}
             disabled={exporting !== null}
             className="export-btn export-btn-csv"

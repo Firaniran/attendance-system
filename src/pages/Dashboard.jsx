@@ -1,19 +1,26 @@
-// ==================== DASHBOARD PAGE ====================
+// ==================== UNIFIED DASHBOARD PAGE ====================
 // File: src/pages/Dashboard.jsx
+// Satu halaman dashboard dengan sidebar navigasi untuk semua fitur.
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Users, Calendar, Clock, FileText, Search, LogOut, Briefcase } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  Users, Calendar, Clock, FileText, Search, LogOut, Briefcase,
+  Activity, Sun, Moon, LayoutGrid, ChevronRight, BarChart2,
+  Home, Menu, X, Bell
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import StatsCard from '../components/StatsCard';
 import DosenTable from '../components/DosenTable';
 import KaryawanTable from '../components/KaryawanTable';
 import FilterPanel from '../components/FilterPanel';
+import LiveFeedList from '../components/LiveFeedList';
+import HourlyBarChart from '../components/HourlyBarChart';
 import { getTodayRange, getWeekRange, getMonthRange } from '../utils/dateUtils';
 import { apiService } from '../services/apiService';
 import { authService } from '../services/authService';
 import '../styles/main.css';
 
-// ==================== HELPER: SESI DARI JAM ====================
+// ==================== HELPER ====================
 export function getSesiFromTime(timeStr) {
   if (!timeStr) return null;
   const date = new Date(timeStr.replace(' ', 'T'));
@@ -24,29 +31,53 @@ export function getSesiFromTime(timeStr) {
   return null;
 }
 
-// ==================== DASHBOARD COMPONENT ====================
+// ==================== SIDEBAR NAV ITEMS ====================
+const NAV_ITEMS = [
+  { key: 'overview',  label: 'Overview',        icon: Home },
+  { key: 'realtime',  label: 'Live Realtime',   icon: Activity, badge: 'LIVE' },
+  { key: 'dosen',     label: 'Rekap Dosen',     icon: Users },
+  { key: 'karyawan',  label: 'Rekap Karyawan',  icon: Briefcase },
+];
+
+// ==================== MAIN COMPONENT ====================
 function Dashboard() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('dosen');
-  const [activeSession, setActiveSession] = useState('all'); // 'all' | 'pagi' | 'malam'
+
+  // ---- Layout state ----
+  const [activeSection, setActiveSection] = useState('overview');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [user, setUser] = useState(null);
+
+  // ---- Rekap (Dosen & Karyawan) state ----
+  const [rekapTab, setRekapTab] = useState('dosen');          // which table inside rekap
+  const [activeSession, setActiveSession] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPeriod, setSelectedPeriod] = useState('today');
   const [dateRange, setDateRange] = useState(getTodayRange());
   const [dosenData, setDosenData] = useState([]);
   const [karyawanData, setKaryawanData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState(null);
+  const [tableLoading, setTableLoading] = useState(false);
 
+  // ---- Realtime state ----
+  const [rtTab, setRtTab] = useState('all');
+  const [rtSession, setRtSession] = useState('all');
+  const [feedItems, setFeedItems] = useState([]);
+  const [rtStats, setRtStats] = useState({ total: 0, hadir: 0, terlambat: 0, avgPersentase: 0 });
+  const [rtDate, setRtDate] = useState(new Date().toISOString().slice(0, 10));
+  const [rtLoading, setRtLoading] = useState(false);
+  const pollRef = useRef(null);
+
+  // ---- Auth ----
   useEffect(() => {
     const currentUser = authService.getCurrentUser();
     setUser(currentUser);
   }, []);
 
-  // Reload data setiap kali tab atau dateRange berubah
-  const loadData = useCallback(async () => {
-    setLoading(true);
+  // ==================== REKAP DATA ====================
+  const loadRekapData = useCallback(async () => {
+    setTableLoading(true);
     try {
-      if (activeTab === 'dosen') {
+      if (rekapTab === 'dosen') {
         const data = await apiService.fetchDosenAttendance(dateRange.start, dateRange.end);
         setDosenData(data || []);
       } else {
@@ -54,21 +85,62 @@ function Dashboard() {
         setKaryawanData(data || []);
       }
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('Error loading rekap data:', error);
     } finally {
-      setLoading(false);
+      setTableLoading(false);
     }
-  }, [activeTab, dateRange]);
+  }, [rekapTab, dateRange]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (activeSection === 'dosen' || activeSection === 'karyawan' || activeSection === 'overview') {
+      loadRekapData();
+    }
+  }, [loadRekapData, activeSection]);
 
-  // Reset session filter saat pindah ke tab karyawan
   useEffect(() => {
-    if (activeTab === 'karyawan') setActiveSession('all');
-  }, [activeTab]);
+    if (rekapTab === 'karyawan') setActiveSession('all');
+  }, [rekapTab]);
 
+  // Sync rekapTab with activeSection
+  useEffect(() => {
+    if (activeSection === 'dosen') setRekapTab('dosen');
+    if (activeSection === 'karyawan') setRekapTab('karyawan');
+  }, [activeSection]);
+
+  // ==================== REALTIME DATA ====================
+  const loadFeed = useCallback(async () => {
+    try {
+      const data = await apiService.fetchRealtimeFeed(rtDate);
+      setFeedItems(data || []);
+      computeRtStats(data || []);
+    } catch (err) {
+      console.error('Realtime feed error:', err);
+    } finally {
+      setRtLoading(false);
+    }
+  }, [rtDate]);
+
+  useEffect(() => {
+    if (activeSection === 'realtime' || activeSection === 'overview') {
+      setRtLoading(true);
+      loadFeed();
+      clearInterval(pollRef.current);
+      pollRef.current = setInterval(loadFeed, 15000);
+    } else {
+      clearInterval(pollRef.current);
+    }
+    return () => clearInterval(pollRef.current);
+  }, [loadFeed, activeSection]);
+
+  function computeRtStats(data) {
+    const uniqueNames = new Set(data.map(d => d.nama || d.nip)).size;
+    const hadir = data.filter(d => d.statusAbsen === 'masuk').length;
+    const terlambat = data.filter(d => d.terlambat === true).length;
+    const avg = data.length > 0 ? Math.round((hadir / data.length) * 100) : 0;
+    setRtStats({ total: uniqueNames, hadir, terlambat, avgPersentase: avg });
+  }
+
+  // ==================== PERIOD HANDLERS ====================
   const handlePeriodChange = (period) => {
     setSelectedPeriod(period);
     if (period === 'today') setDateRange(getTodayRange());
@@ -81,33 +153,25 @@ function Dashboard() {
     navigate('/login');
   };
 
-  // ==================== FILTER SESI UNTUK DOSEN ====================
-  // Sesi ditentukan dari field 'sesi' di data, atau fallback ke jam lastCheckIn
+  // ==================== DERIVED DATA ====================
   const filteredDosenData = dosenData.filter((d) => {
     if (activeSession === 'all') return true;
     const sesi = d.sesi || getSesiFromTime(d.lastCheckIn);
     return sesi === activeSession;
   });
 
-  // ==================== STATS ====================
-  const stats =
-    activeTab === 'dosen'
+  const rekapStats =
+    rekapTab === 'dosen'
       ? {
           total: filteredDosenData.length,
           hadir: filteredDosenData.reduce((s, d) => s + (d.totalHadir || 0), 0),
           terlambat: filteredDosenData.reduce((s, d) => s + (d.totalTerlambat || 0), 0),
           avgPersentase:
             filteredDosenData.length > 0
-              ? Math.round(
-                  filteredDosenData.reduce((s, d) => {
-                    const pct =
-                      d.persentase ??
-                      (d.totalHariKerja > 0
-                        ? (d.totalHadir / d.totalHariKerja) * 100
-                        : 0);
-                    return s + pct;
-                  }, 0) / filteredDosenData.length
-                )
+              ? Math.round(filteredDosenData.reduce((s, d) => {
+                  const pct = d.persentase ?? (d.totalHariKerja > 0 ? (d.totalHadir / d.totalHariKerja) * 100 : 0);
+                  return s + pct;
+                }, 0) / filteredDosenData.length)
               : 0,
         }
       : {
@@ -116,133 +180,386 @@ function Dashboard() {
           terlambat: karyawanData.reduce((s, k) => s + (k.totalTerlambat || 0), 0),
           avgPersentase:
             karyawanData.length > 0
-              ? Math.round(
-                  karyawanData.reduce((s, k) => {
-                    const pct =
-                      k.persentase ??
-                      (k.totalHariKerja > 0
-                        ? (k.totalHadir / k.totalHariKerja) * 100
-                        : 0);
-                    return s + pct;
-                  }, 0) / karyawanData.length
-                )
+              ? Math.round(karyawanData.reduce((s, k) => {
+                  const pct = k.persentase ?? (k.totalHariKerja > 0 ? (k.totalHadir / k.totalHariKerja) * 100 : 0);
+                  return s + pct;
+                }, 0) / karyawanData.length)
               : 0,
         };
 
+  const filteredFeed = feedItems.filter(item => {
+    if (rtTab === 'dosen' && item.tipe !== 'dosen') return false;
+    if (rtTab === 'karyawan' && item.tipe !== 'karyawan') return false;
+    if (rtSession === 'pagi' && item.sesi !== 'pagi') return false;
+    if (rtSession === 'malam' && item.sesi !== 'malam') return false;
+    return true;
+  });
+
+  // ==================== SECTION TITLE ====================
+  const sectionTitle = {
+    overview: 'Overview',
+    realtime: 'Live Realtime',
+    dosen: 'Rekap Dosen',
+    karyawan: 'Rekap Karyawan',
+  }[activeSection];
+
+  // ==================== RENDER ====================
   return (
-    <div className="app-container">
-      {/* ===== HEADER ===== */}
-      <div className="dashboard-header">
-        <div className="header-inner">
-          <div>
-            <h1 className="header-title">Sistem Rekap Absensi Kampus</h1>
-            <p className="header-subtitle">Dashboard Monitoring Kehadiran Dosen &amp; Karyawan</p>
+    <div className={`dash-shell ${sidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
+
+      {/* ===== SIDEBAR ===== */}
+      <aside className="dash-sidebar">
+        {/* Logo / Brand */}
+        <div className="sidebar-brand">
+          <div className="sidebar-brand-icon">
+            <BarChart2 size={20} />
           </div>
-          <div className="header-right">
-            {user && (
-              <div className="user-info">
-                <p className="user-name">{user.name || user.username || 'User'}</p>
-                <p className="user-email">{user.email || ''}</p>
+          {sidebarOpen && (
+            <div className="sidebar-brand-text">
+              <span className="sidebar-brand-title">AbsensiKampus</span>
+              <span className="sidebar-brand-sub">Monitoring System</span>
+            </div>
+          )}
+        </div>
+
+        {/* Nav */}
+        <nav className="sidebar-nav">
+          {NAV_ITEMS.map(({ key, label, icon: Icon, badge }) => (
+            <button
+              key={key}
+              className={`sidebar-nav-item ${activeSection === key ? 'active' : ''}`}
+              onClick={() => setActiveSection(key)}
+              title={!sidebarOpen ? label : undefined}
+            >
+              <span className="sidebar-nav-icon">
+                <Icon size={18} />
+                {badge && activeSection !== key && (
+                  <span className="sidebar-live-dot" />
+                )}
+              </span>
+              {sidebarOpen && (
+                <span className="sidebar-nav-label">
+                  {label}
+                  {badge && <span className="sidebar-badge">{badge}</span>}
+                </span>
+              )}
+              {sidebarOpen && activeSection === key && (
+                <ChevronRight size={14} className="sidebar-nav-arrow" />
+              )}
+            </button>
+          ))}
+        </nav>
+
+        {/* User info + logout */}
+        <div className="sidebar-footer">
+          {user && sidebarOpen && (
+            <div className="sidebar-user">
+              <div className="sidebar-user-avatar">
+                {(user.name || user.username || 'U').charAt(0).toUpperCase()}
+              </div>
+              <div className="sidebar-user-info">
+                <span className="sidebar-user-name">{user.name || user.username || 'User'}</span>
+                <span className="sidebar-user-email">{user.email || ''}</span>
+              </div>
+            </div>
+          )}
+          <button className="sidebar-logout-btn" onClick={handleLogout} title="Logout">
+            <LogOut size={16} />
+            {sidebarOpen && <span>Logout</span>}
+          </button>
+        </div>
+      </aside>
+
+      {/* ===== MAIN AREA ===== */}
+      <div className="dash-main">
+
+        {/* ---- Top Bar ---- */}
+        <header className="dash-topbar">
+          <div className="topbar-left">
+            <button
+              className="topbar-toggle-btn"
+              onClick={() => setSidebarOpen(o => !o)}
+              aria-label="Toggle sidebar"
+            >
+              {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+            </button>
+            <div className="topbar-breadcrumb">
+              <span className="topbar-breadcrumb-root">Dashboard</span>
+              <ChevronRight size={14} className="topbar-bc-sep" />
+              <span className="topbar-breadcrumb-current">{sectionTitle}</span>
+            </div>
+          </div>
+          <div className="topbar-right">
+            {activeSection === 'realtime' && (
+              <div className="topbar-live-badge">
+                <span className="rt-pulse-dot" />
+                REAL-TIME
               </div>
             )}
-            <button className="logout-btn" onClick={handleLogout}>
-              <LogOut size={16} />
-              Logout
+            <button className="topbar-icon-btn" title="Notifikasi">
+              <Bell size={16} />
             </button>
           </div>
+        </header>
+
+        {/* ---- Page Content ---- */}
+        <main className="dash-content">
+
+          {/* ======================== OVERVIEW ======================== */}
+          {activeSection === 'overview' && (
+            <div className="section-overview">
+              <div className="page-heading">
+                <h2 className="page-title">Selamat datang{user ? `, ${user.name || user.username}` : ''} 👋</h2>
+                <p className="page-sub">Ringkasan kehadiran hari ini</p>
+              </div>
+
+              {/* Quick stats row */}
+              <div className="stats-grid">
+                <StatsCard icon={Users}    title="Total Dosen"       value={dosenData.length}         color="#3B82F6" />
+                <StatsCard icon={Briefcase} title="Total Karyawan"  value={karyawanData.length}       color="#10B981" />
+                <StatsCard icon={Activity} title="Live Check-in"    value={rtStats.hadir}             color="#8B5CF6" />
+                <StatsCard icon={Clock}    title="Keterlambatan"     value={rtStats.terlambat} subtitle="hari ini" color="#EF4444" />
+              </div>
+
+              {/* Two-column: live feed + quick links */}
+              <div className="overview-grid">
+                {/* Live feed mini */}
+                <div className="overview-card">
+                  <div className="overview-card-header">
+                    <span className="overview-card-title">
+                      <Activity size={15} />
+                      Live Feed Kehadiran
+                    </span>
+                    <button
+                      className="overview-card-link"
+                      onClick={() => setActiveSection('realtime')}
+                    >
+                      Lihat semua <ChevronRight size={13} />
+                    </button>
+                  </div>
+                  <LiveFeedList items={filteredFeed.slice(0, 8)} loading={rtLoading} compact />
+                </div>
+
+                {/* Quick navigation cards */}
+                <div className="overview-quick-nav">
+                  {[
+                    { key: 'realtime', icon: Activity,  label: 'Live Realtime',  sub: 'Monitor kehadiran saat ini', color: '#8B5CF6' },
+                    { key: 'dosen',    icon: Users,     label: 'Rekap Dosen',    sub: 'Data absensi dosen',         color: '#3B82F6' },
+                    { key: 'karyawan', icon: Briefcase, label: 'Rekap Karyawan', sub: 'Data absensi karyawan',      color: '#10B981' },
+                  ].map(({ key, icon: Icon, label, sub, color }) => (
+                    <button
+                      key={key}
+                      className="quick-nav-card"
+                      onClick={() => setActiveSection(key)}
+                    >
+                      <span className="quick-nav-icon" style={{ background: color + '20', color }}>
+                        <Icon size={20} />
+                      </span>
+                      <span className="quick-nav-text">
+                        <span className="quick-nav-label">{label}</span>
+                        <span className="quick-nav-sub">{sub}</span>
+                      </span>
+                      <ChevronRight size={16} className="quick-nav-arrow" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ======================== REALTIME ======================== */}
+          {activeSection === 'realtime' && (
+            <div className="section-realtime">
+              <div className="page-heading">
+                <h2 className="page-title">Live Realtime</h2>
+                <p className="page-sub">Diperbarui otomatis setiap 15 detik</p>
+              </div>
+
+              {/* Stats */}
+              <div className="stats-grid">
+                <StatsCard icon={Users}    title="Total Hadir Hari Ini" value={rtStats.total}                color="#3B82F6" />
+                <StatsCard icon={Calendar} title="Total Check-in"       value={rtStats.hadir}                color="#10B981" />
+                <StatsCard icon={Clock}    title="Keterlambatan"        value={rtStats.terlambat}            color="#EF4444" />
+                <StatsCard icon={FileText} title="Rata-rata Kehadiran"  value={`${rtStats.avgPersentase}%`}  color="#8B5CF6" />
+              </div>
+
+              {/* Main layout */}
+              <div className="rt-main-row">
+                {/* Feed card */}
+                <div className="rt-feed-card">
+                  <div className="rt-feed-header">
+                    <h3 className="rt-feed-title">
+                      <Activity size={16} color="#1d4ed8" />
+                      Live Feed Kehadiran
+                    </h3>
+                    <span className="rt-tag">● REAL-TIME</span>
+                  </div>
+
+                  <div className="rt-tab-group">
+                    {['all', 'dosen', 'karyawan'].map(t => (
+                      <button
+                        key={t}
+                        className={`rt-tab ${rtTab === t ? 'active' : ''}`}
+                        onClick={() => setRtTab(t)}
+                      >
+                        {t === 'all' ? 'Semua' : t === 'dosen' ? 'Dosen' : 'Karyawan'}
+                      </button>
+                    ))}
+                  </div>
+
+                  <LiveFeedList items={filteredFeed} loading={rtLoading} />
+                </div>
+
+                {/* Side panel */}
+                <div className="rt-side-panel">
+                  <div className="rt-side-card">
+                    <p className="rt-side-title">📅 Periode &amp; Sesi</p>
+                    <label className="rt-label">Tanggal</label>
+                    <input
+                      type="date"
+                      className="filter-input"
+                      value={rtDate}
+                      onChange={e => setRtDate(e.target.value)}
+                      style={{ marginBottom: 10, width: '100%' }}
+                    />
+                    <label className="rt-label">Sesi Kelas</label>
+                    <div className="rt-session-pills">
+                      {[
+                        { key: 'all',   label: 'Semua', Icon: LayoutGrid, cls: 'pill-all'   },
+                        { key: 'pagi',  label: 'Pagi',  Icon: Sun,        cls: 'pill-pagi'  },
+                        { key: 'malam', label: 'Malam', Icon: Moon,       cls: 'pill-malam' },
+                      ].map(({ key, label, Icon, cls }) => (
+                        <button
+                          key={key}
+                          className={`rt-pill ${cls} ${rtSession === key ? 'active' : ''}`}
+                          onClick={() => setRtSession(key)}
+                        >
+                          <Icon size={13} /> {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rt-side-card rt-chart-card">
+                    <p className="rt-side-title">📊 Kehadiran Per Jam</p>
+                    <HourlyBarChart items={feedItems} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ======================== REKAP DOSEN ======================== */}
+          {activeSection === 'dosen' && (
+            <RekapSection
+              label="Dosen"
+              icon={<Users size={18} />}
+              stats={rekapStats}
+              filteredData={filteredDosenData}
+              karyawanData={karyawanData}
+              activeSession={activeSession}
+              onSessionChange={setActiveSession}
+              selectedPeriod={selectedPeriod}
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+              onPeriodChange={handlePeriodChange}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              loading={tableLoading}
+              rekapTab={rekapTab}
+            />
+          )}
+
+          {/* ======================== REKAP KARYAWAN ======================== */}
+          {activeSection === 'karyawan' && (
+            <RekapSection
+              label="Karyawan"
+              icon={<Briefcase size={18} />}
+              stats={rekapStats}
+              filteredData={filteredDosenData}
+              karyawanData={karyawanData}
+              activeSession={activeSession}
+              onSessionChange={setActiveSession}
+              selectedPeriod={selectedPeriod}
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+              onPeriodChange={handlePeriodChange}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              loading={tableLoading}
+              rekapTab={rekapTab}
+            />
+          )}
+
+        </main>
+      </div>
+    </div>
+  );
+}
+
+// ==================== REKAP SECTION COMPONENT ====================
+function RekapSection({
+  label, stats,
+  filteredData, karyawanData,
+  activeSession, onSessionChange,
+  selectedPeriod, dateRange, onDateRangeChange, onPeriodChange,
+  searchTerm, onSearchChange,
+  loading, rekapTab,
+}) {
+  const isDosen = rekapTab === 'dosen';
+
+  return (
+    <div className="section-rekap">
+      <div className="page-heading">
+        <h2 className="page-title">Rekap {label}</h2>
+        <p className="page-sub">Data kehadiran {label.toLowerCase()} berdasarkan periode yang dipilih</p>
+      </div>
+
+      {/* Stats */}
+      <div className="stats-grid">
+        <StatsCard icon={Users}    title={`Total ${label}`}      value={stats.total}               color="#3B82F6" />
+        <StatsCard icon={Calendar} title="Total Kehadiran"       value={stats.hadir}               color="#10B981" />
+        <StatsCard icon={Clock}    title="Total Keterlambatan"   value={stats.terlambat} subtitle="kali" color="#EF4444" />
+        <StatsCard icon={FileText} title="Rata-rata Kehadiran"   value={`${stats.avgPersentase}%`} color="#8B5CF6" />
+      </div>
+
+      {/* Filter Panel */}
+      <FilterPanel
+        activeTab={rekapTab}
+        activeSession={activeSession}
+        onSessionChange={onSessionChange}
+        selectedPeriod={selectedPeriod}
+        dateRange={dateRange}
+        onDateRangeChange={onDateRangeChange}
+        onPeriodChange={onPeriodChange}
+      />
+
+      {/* Search */}
+      <div className="search-container">
+        <div className="search-wrapper">
+          <Search className="search-icon" size={20} />
+          <input
+            type="text"
+            placeholder={`Cari ${label.toLowerCase()} (nama, NIP)...`}
+            value={searchTerm}
+            onChange={e => onSearchChange(e.target.value)}
+            className="search-input"
+          />
         </div>
       </div>
 
-      <div className="main-content">
-        {/* ===== TAB NAVIGATION ===== */}
-        <div className="tab-navigation">
-          <button
-            onClick={() => setActiveTab('dosen')}
-            className={`tab-button ${activeTab === 'dosen' ? 'active' : ''}`}
-          >
-            <Users size={18} />
-            Rekap Dosen
-          </button>
-          <button
-            onClick={() => setActiveTab('karyawan')}
-            className={`tab-button ${activeTab === 'karyawan' ? 'active' : ''}`}
-          >
-            <Briefcase size={18} />
-            Rekap Karyawan
-          </button>
-        </div>
-
-        {/* ===== STATS CARDS ===== */}
-        <div className="stats-grid">
-          <StatsCard
-            icon={Users}
-            title={`Total ${activeTab === 'dosen' ? 'Dosen' : 'Karyawan'}`}
-            value={stats.total}
-            color="#3B82F6"
-          />
-          <StatsCard
-            icon={Calendar}
-            title="Total Kehadiran"
-            value={stats.hadir}
-            color="#10B981"
-          />
-          <StatsCard
-            icon={Clock}
-            title="Total Keterlambatan"
-            value={stats.terlambat}
-            subtitle="kali"
-            color="#EF4444"
-          />
-          <StatsCard
-            icon={FileText}
-            title="Rata-rata Kehadiran"
-            value={`${stats.avgPersentase}%`}
-            color="#8B5CF6"
-          />
-        </div>
-
-        {/* ===== FILTER PANEL ===== */}
-        <FilterPanel
-          activeTab={activeTab}
-          activeSession={activeSession}
-          onSessionChange={setActiveSession}
-          selectedPeriod={selectedPeriod}
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
-          onPeriodChange={handlePeriodChange}
-        />
-
-        {/* ===== SEARCH BAR ===== */}
-        <div className="search-container">
-          <div className="search-wrapper">
-            <Search className="search-icon" size={20} />
-            <input
-              type="text"
-              placeholder={
-                activeTab === 'dosen'
-                  ? 'Cari dosen (nama, NIP)...'
-                  : 'Cari karyawan (nama, NIP)...'
-              }
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
+      {/* Table */}
+      <div className="table-container">
+        {loading ? (
+          <div className="loading-container">
+            <div className="loading-spinner" />
+            <div className="loading-text">Memuat data...</div>
           </div>
-        </div>
-
-        {/* ===== DATA TABLE ===== */}
-        <div className="table-container">
-          {loading ? (
-            <div className="loading-container">
-              <div className="loading-spinner"></div>
-              <div className="loading-text">Memuat data...</div>
-            </div>
-          ) : activeTab === 'dosen' ? (
-            <DosenTable data={filteredDosenData} searchTerm={searchTerm} />
-          ) : (
-            <KaryawanTable data={karyawanData} searchTerm={searchTerm} />
-          )}
-        </div>
+        ) : isDosen ? (
+          <DosenTable data={filteredData} searchTerm={searchTerm} />
+        ) : (
+          <KaryawanTable data={karyawanData} searchTerm={searchTerm} />
+        )}
       </div>
     </div>
   );

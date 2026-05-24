@@ -1,7 +1,4 @@
 // ==================== EXPORT SERVICE ====================
-// File: src/services/exportService.js
-// Wrapper tipis di atas apiService.exportData
-// agar FilterPanel bisa memanggil exportService.exportToExcel() dst.
 
 import { apiService } from './apiService';
 
@@ -17,9 +14,4 @@ export const exportService = {
   async exportToCSV(type, startDate, endDate) {
     return apiService.exportData('csv', type, startDate, endDate);
   },
-
-  async exportDetailedToExcel(type, startDate, endDate) {
-    // Endpoint detail — sesuaikan path jika berbeda di backend Anda
-    return apiService.exportData('excel-detail', type, startDate, endDate);
-  }
 };

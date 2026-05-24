@@ -1,0 +1,298 @@
+/* ==================== SCROLL OVERRIDE ====================
+   Override overflow:hidden dari main.css khusus halaman realtime.
+   Selector :has() didukung semua browser modern (Chrome 105+, Firefox 121+, Safari 15.4+).
+   useEffect di RealtimeDashboard.jsx menjadi fallback untuk browser lama.
+   ========================================================== */
+body:has(.rt-container),
+body:has(.rt-container) html {
+  overflow: auto !important;
+  max-height: none !important;
+}
+
+body:has(.rt-container) #root {
+  overflow: visible !important;
+  max-height: none !important;
+  height: auto !important;
+}
+
+/* ==================== REALTIME PAGE ==================== */
+.rt-container {
+  min-height: 100vh;
+  background: #f8f9fc;
+  overflow-x: hidden;
+  /* Biarkan scroll dihandle oleh body/html, bukan container ini */
+}
+
+.rt-header {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%);
+  color: white;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(29, 78, 216, 0.25);
+}
+
+.rt-header-title { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 3px; }
+.rt-header-sub   { font-size: 12px; color: #bfdbfe; margin: 0; }
+
+.rt-live-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rt-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4ade80;
+  animation: rtPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes rtPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.8); }
+}
+
+.rt-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.rt-back-btn:hover { background: rgba(255, 255, 255, 0.22); }
+
+/* ==================== BODY / LAYOUT ==================== */
+.rt-body {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+  /* Tidak ada height/max-height agar konten bisa tumbuh bebas */
+}
+
+.rt-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.rt-main-row {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 16px;
+}
+
+/* ==================== FEED CARD ==================== */
+.rt-feed-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.rt-feed-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rt-feed-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a202c;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+}
+
+.rt-tag {
+  background: #dcfce7;
+  color: #166534;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+
+/* ==================== TAB MINI ==================== */
+.rt-tab-group {
+  display: flex;
+  gap: 6px;
+  padding: 10px 18px;
+  background: #f8f9fc;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.rt-tab {
+  flex: 1;
+  padding: 7px 10px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  color: #718096;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.rt-tab.active               { background: white; color: #1d4ed8; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.rt-tab:hover:not(.active)   { color: #2d3748; background: #edf2f7; }
+
+/* ==================== FEED LIST ==================== */
+/* max-height dihapus agar tidak ada inner scroll — halaman yang scroll */
+.rt-feed-list {
+  overflow: visible;
+}
+
+.rt-feed-item {
+  padding: 12px 18px;
+  border-bottom: 1px solid #f8f9fc;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: background 0.15s;
+}
+.rt-feed-item:hover        { background: #fafbfc; }
+.rt-feed-item--new         { animation: rtSlideIn 0.4s ease-out; background: #f0f9ff; }
+
+@keyframes rtSlideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.rt-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.rt-feed-info  { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rt-feed-name  { font-size: 13px; font-weight: 600; color: #1a202c; }
+.rt-feed-role  { font-size: 11px; color: #a0aec0; }
+
+.rt-feed-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 5px;
+  width: fit-content;
+}
+.feed-status-in   { background: #dcfce7; color: #166534; }
+.feed-status-out  { background: #fef9c3; color: #854d0e; }
+.feed-status-late { background: #fee2e2; color: #991b1b; }
+
+.rt-feed-time  { text-align: right; flex-shrink: 0; }
+.rt-time-val   { display: block; font-size: 12px; font-weight: 600; color: #4a5568; }
+.rt-date-val   { display: block; font-size: 10px; color: #a0aec0; margin-top: 2px; }
+
+/* ==================== SIDE PANEL ==================== */
+.rt-side-panel { display: flex; flex-direction: column; gap: 14px; }
+.rt-side-card  { background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 16px; }
+.rt-side-title { font-size: 11px; font-weight: 700; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 12px; }
+.rt-label      { display: block; font-size: 12px; font-weight: 600; color: #4a5568; margin-bottom: 5px; }
+
+.rt-session-pills { display: flex; gap: 6px; }
+.rt-pill {
+  flex: 1;
+  padding: 7px 6px;
+  border-radius: 7px;
+  border: 1.5px solid #e2e8f0;
+  background: #f8f9fc;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  color: #718096;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.rt-pill.pill-all.active   { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+.rt-pill.pill-pagi.active  { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
+.rt-pill.pill-malam.active { background: #1e1b4b; border-color: #6366f1; color: #c7d2fe; }
+
+/* ==================== HOURLY BAR CHART ==================== */
+.rt-chart-card { flex: 1; }
+.rt-bar-chart  { display: flex; flex-direction: column; gap: 7px; }
+.rt-bar-row    { display: flex; align-items: center; gap: 8px; }
+.rt-bar-label  { font-size: 11px; color: #4a5568; font-weight: 600; width: 42px; text-align: right; flex-shrink: 0; }
+.rt-bar-track  { flex: 1; height: 6px; background: #f1f5f9; border-radius: 99px; overflow: hidden; }
+.rt-bar-fill   { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
+.rt-bar-val    { font-size: 11px; font-weight: 700; color: #2d3748; width: 20px; flex-shrink: 0; }
+
+/* ==================== REALTIME NAV BUTTON (di header Dashboard) ==================== */
+.realtime-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background-color: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.realtime-nav-btn:hover { background-color: rgba(74, 222, 128, 0.25); }
+
+.realtime-nav-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  animation: realtimePulse 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes realtimePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.75); }
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 900px) {
+  .rt-main-row   { grid-template-columns: 1fr; }
+  .rt-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .rt-body       { padding: 16px; }
+  .rt-header     { padding: 14px 16px; flex-wrap: wrap; gap: 10px; }
+}
+
+@media (max-width: 480px) {
+  .rt-stats-grid        { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .rt-session-pills     { flex-direction: column; }
+}

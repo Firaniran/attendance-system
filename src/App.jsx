@@ -1,5 +1,6 @@
 // ==================== APP.JSX WITH ROUTING ====================
 // File: src/App.jsx
+// Dashboard sekarang sudah terintegrasi — tidak perlu route /realtime terpisah.
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -12,23 +13,14 @@ import { authService } from './services/authService';
 // ==================== PROTECTED ROUTE ====================
 const ProtectedRoute = ({ children }) => {
   const isAuthenticated = authService.isAuthenticated();
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-  
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 };
 
 // ==================== PUBLIC ROUTE ====================
-// Redirect ke dashboard jika sudah login
 const PublicRoute = ({ children }) => {
   const isAuthenticated = authService.isAuthenticated();
-  
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
-  }
-  
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
   return children;
 };
 
@@ -37,49 +29,23 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Public Routes - Halaman Auth */}
-        <Route 
-          path="/login" 
-          element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          } 
-        />
-        
-        <Route 
-          path="/register" 
-          element={
-            <PublicRoute>
-              <Register />
-            </PublicRoute>
-          } 
-        />
-        
-        <Route 
-          path="/reset-password" 
-          element={
-            <PublicRoute>
-              <ResetPassword />
-            </PublicRoute>
-          } 
+        {/* Public Routes */}
+        <Route path="/login"          element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/register"       element={<PublicRoute><Register /></PublicRoute>} />
+        <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+
+        {/* Protected Routes */}
+        <Route
+          path="/dashboard"
+          element={<ProtectedRoute><Dashboard /></ProtectedRoute>}
         />
 
-        {/* Protected Routes - Halaman Dashboard */}
-        <Route 
-          path="/dashboard" 
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } 
-        />
+        {/* Legacy /realtime route — redirect ke /dashboard */}
+        <Route path="/realtime" element={<Navigate to="/dashboard" replace />} />
 
-        {/* Default Route - Redirect ke login */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        
-        {/* 404 Route - Redirect ke login */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        {/* Default */}
+        <Route path="/"  element={<Navigate to="/login" replace />} />
+        <Route path="*"  element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
   );
