@@ -44,11 +44,14 @@ attendance-system/
 │   │   ├── DosenTable.jsx
 │   │   ├── FilterPanel.jsx
 │   │   ├── Header.jsx
+│   │   ├── HourlyBarChart.jsx
 │   │   ├── KaryawanTable.jsx
+│   │   ├── LiveFeedList.jsx
 │   │   └── StatsCard.jsx
 │   ├── pages/
 │   │   ├── Dashboard.jsx
 │   │   ├── Login.jsx
+│   │   ├── RealtimeDashboard.jsx
 │   │   ├── Register.jsx
 │   │   └── ResetPassword.jsx
 │   ├── services/
@@ -56,7 +59,8 @@ attendance-system/
 │   │   └── authService.js
 │   ├── styles/
 │   │   ├── auth.css
-│   │   └── main.css
+│   │   ├── main.css
+│   │   └── realtime.css
 │   ├── utils/
 │   │   └── dateUtils.js
 │   ├── App.jsx
