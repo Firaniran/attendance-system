@@ -12,6 +12,7 @@ Dashboard monitoring kehadiran dosen dan karyawan berbasis fingerspot dengan tam
 
 ### 📊 Dashboard
 - ✅ Rekap absensi dosen (tanpa jam telat)
+- ✅ Riwayat kehadirat secara real time
 - ✅ Rekap absensi karyawan (dengan jam telat)
 - ✅ Filter periode (minggu/bulan/custom)
 - ✅ Export data (Excel, PDF, CSV)
