@@ -6,7 +6,6 @@ Dashboard monitoring kehadiran dosen dan karyawan berbasis fingerspot dengan tam
 
 ### 🔐 Authentication
 - ✅ Login dengan email & password
-- ✅ Register akun baru
 - ✅ Reset password via email (kode verifikasi)
 - ✅ Protected routes & JWT authentication
 
@@ -52,7 +51,6 @@ attendance-system/
 │   │   ├── Dashboard.jsx
 │   │   ├── Login.jsx
 │   │   ├── RealtimeDashboard.jsx
-│   │   ├── Register.jsx
 │   │   └── ResetPassword.jsx
 │   ├── services/
 │   │   ├── apiService.js
