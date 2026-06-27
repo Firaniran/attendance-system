@@ -1,11 +1,10 @@
 // ==================== API SERVICE ====================
-// File: src/services/apiService.js
 
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = 'http://localhost:3333/api';
 
 const getAuthHeader = () => ({
-  Authorization: `Bearer ${localStorage.getItem('token')}`,
-  'Content-Type': 'application/json'
+  Authorization:  `Bearer ${localStorage.getItem('token')}`,
+  'Content-Type': 'application/json',
 });
 
 const handleResponse = async (res) => {
@@ -57,34 +56,27 @@ export const apiService = {
   },
 
   // ==================== REALTIME FEED ====================
-  // Memanggil fetchAllAttendance dengan startDate = endDate = date,
-  // lalu memetakan field ke format yang dipakai LiveFeedList & HourlyBarChart.
   async fetchRealtimeFeed(date) {
     try {
       const all = await this.fetchAllAttendance(date, date);
 
       return all.map((d) => ({
-        // identitas
-        id:     d.id    || d.nip,
-        nama:   d.nama  || 'N/A',
-        nip:    d.nip   || '',
-        tipe:   (d.jabatan || '').toUpperCase() === 'DOSEN' ? 'dosen' : 'karyawan',
+        id:    d.id   || d.nip,
+        nama:  d.nama || 'N/A',
+        nip:   d.nip  || '',
+        tipe:  (d.jabatan || '').toUpperCase() === 'DOSEN' ? 'dosen' : 'karyawan',
 
-        // status absen — sesuaikan value-nya jika backend pakai string berbeda
-        // misal backend kirim: "MASUK" / "KELUAR" / "TERLAMBAT"
         statusAbsen: (() => {
           const raw = (d.statusAbsen || d.status || '').toLowerCase();
-          if (raw.includes('keluar'))   return 'keluar';
+          if (raw.includes('keluar'))    return 'keluar';
           if (raw.includes('terlambat')) return 'terlambat';
           return 'masuk';
         })(),
 
         terlambat: d.totalTerlambat > 0 || (d.statusAbsen || '').toLowerCase().includes('terlambat'),
 
-        // waktu check-in untuk feed & bar chart
         waktu: d.lastCheckIn || d.waktu || null,
 
-        // sesi dari jam check-in (sama dengan getSesiFromTime di Dashboard)
         sesi: (() => {
           const str = d.lastCheckIn || d.waktu || '';
           if (!str) return null;
@@ -105,11 +97,38 @@ export const apiService = {
   // ==================== EXPORT ====================
   async exportData(format, jabatan, startDate, endDate) {
     try {
-      const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
-      if (jabatan) params.append('jabatan', jabatan.toUpperCase());
+      // Ekstrak bulan dan tahun dari startDate (format: YYYY-MM-DD)
+      const parts = (startDate || new Date().toISOString().slice(0, 10)).split('-');
+      const tahun = parts[0] || String(new Date().getFullYear());
+      const bulan = parts[1] || String(new Date().getMonth() + 1).padStart(2, '0');
+
+      const params = new URLSearchParams({ bulan, tahun });
+
+      // Petakan format ke path endpoint backend yang benar
+      const endpointPathMap = {
+        'csv':          'csv',
+        'pdf':          'pdf',
+        'excel':        'excel',
+        'detail':       'excel-detail',
+        'excel-detail': 'excel-detail',
+        // alias lama yang mungkin dikirim FilterPanel
+        'xlsx':         'excel',
+      };
+      const endpointPath = endpointPathMap[format] ?? format;
+
+      // Petakan format ke ekstensi file yang diunduh
+      const extMap = {
+        'csv':          'csv',
+        'pdf':          'pdf',
+        'excel':        'xlsx',
+        'detail':       'xlsx',
+        'excel-detail': 'xlsx',
+        'xlsx':         'xlsx',
+      };
+      const ext = extMap[format] ?? 'xlsx';
 
       const res = await fetch(
-        `${BASE_URL}/export/${format}?${params.toString()}`,
+        `${BASE_URL}/export/${endpointPath}?${params.toString()}`,
         { method: 'GET', headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );
 
@@ -123,11 +142,10 @@ export const apiService = {
 
       const blob = await res.blob();
       const url  = window.URL.createObjectURL(blob);
-      const ext  = format === 'csv' ? 'csv' : format === 'pdf' ? 'pdf' : 'xlsx';
 
       const a = document.createElement('a');
-      a.href = url;
-      a.download = `rekap-absensi-${jabatan || 'all'}.${ext}`;
+      a.href     = url;
+      a.download = `rekap-absensi-${jabatan || 'all'}-${bulan}-${tahun}.${ext}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -138,5 +156,5 @@ export const apiService = {
       console.error(err);
       throw new Error('Export gagal. Silakan coba lagi.');
     }
-  }
+  },
 };

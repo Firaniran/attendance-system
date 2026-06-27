@@ -998,9 +998,16 @@ body {
 
 .table-responsive,
 .table-wrapper {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
   overflow-x: auto;
   max-height: calc(100vh - 460px);
   overflow-y: auto;
+}
+
+.table-wrapper tbody tr:hover {
+  background-color: #f8fafc;
+  transition: background-color 0.2s ease;
 }
 
 /* Custom scrollbar */

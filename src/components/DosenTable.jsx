@@ -56,18 +56,31 @@ const DosenTable = ({ data, searchTerm }) => {
 
   return (
     <div className="table-wrapper">
-      <table>
+      <table   style={{
+    width: '100%',
+    borderCollapse: 'collapse',
+    border: '1px solid #e5e7eb'
+    }}>
         <thead>
           <tr>
-            <th style={{ textAlign: 'center' }}>No</th>
-            <th style={{ textAlign: 'center' }}>Nama</th>
-            <th style={{ textAlign: 'center' }}>NIP</th>
-            <th style={{ textAlign: 'center' }}>Sesi</th>
-            <th style={{ textAlign: 'center' }}>Hadir</th>
-            <th style={{ textAlign: 'center' }}>Total Hari Kerja</th>
-            <th style={{ textAlign: 'center' }}>Waktu Kehadiran</th>
-            <th style={{ textAlign: 'center' }}>Check In Terakhir</th>
-            <th style={{ textAlign: 'center' }}>Check Out Terakhir</th>
+            <th style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px', background: '#f8fafc', color: '#374151',
+              fontWeight: '700' }}>No</th>
+            <th style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px', background: '#f8fafc', color: '#374151', 
+              fontWeight: '700' }}>Nama</th>
+            <th style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px', background: '#f8fafc', color: '#374151',
+              fontWeight: '700' }}>NIP</th>
+            <th style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px',  background: '#f8fafc', color: '#374151',
+              fontWeight: '700' }}>Sesi</th>
+            <th style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px',  background: '#f8fafc', color: '#374151',
+              fontWeight: '700' }}>Hadir</th>
+            <th style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px',  background: '#f8fafc', color: '#374151',
+              fontWeight: '700' }}>Total Hari Kerja</th>
+            <th style={{ textAlign: 'center' , border: '1px solid #e5e7eb', padding: '12px', background: '#f8fafc', color: '#374151',
+              fontWeight: '700', whiteSpace: 'nowrap' }}>Waktu Kehadiran</th>
+            <th style={{ textAlign: 'center' , border: '1px solid #e5e7eb', padding: '12px', background: '#f8fafc', color: '#374151',
+              fontWeight: '700', whiteSpace: 'nowrap' }}>Check In Terakhir</th>
+            <th style={{ textAlign: 'center' , border: '1px solid #e5e7eb', padding: '12px', background: '#f8fafc', color: '#374151',
+              fontWeight: '700', whiteSpace: 'nowrap' }}>Check Out Terakhir</th>
           </tr>
         </thead>
         <tbody>
@@ -77,23 +90,30 @@ const DosenTable = ({ data, searchTerm }) => {
 
             return (
               <tr key={dosen.id || dosen.nip || index}>
-                <td style={{ textAlign: 'center' }}>{index + 1}</td>
-                <td style={{ textAlign: 'center', fontWeight: '600' }}>
+                <td style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px', }}>{index + 1}</td>
+                <td style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px',
+              fontWeight: '600' }}>
                   {dosen.nama || 'N/A'}
                 </td>
-                <td style={{ textAlign: 'center' }}>{dosen.nip || 'N/A'}</td>
-                <td style={{ textAlign: 'center' }}>
+                <td style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px' }}>
+                  {dosen.nip || 'N/A'}
+                </td>
+                <td style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px' }}>
                   <SesiBadge sesi={sesi} />
                 </td>
-                <td style={{ textAlign: 'center' }}>{dosen.totalHadir || 0}</td>
-                <td style={{ textAlign: 'center' }}>{dosen.totalHariKerja || 0}</td>
-                <td style={{ textAlign: 'center' }}>
+                <td style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px' }}>
+                  {dosen.totalHadir || 0}
+                </td>
+                <td style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px' }}>
+                  {dosen.totalHariKerja || 0}
+                </td>
+                <td style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px', whiteSpace: 'nowrap' }}>
                   {dosen.attendanceDates || 'Belum ada data'}
                 </td>
-                <td style={{ textAlign: 'center' }}>
+                <td style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px', whiteSpace: 'nowrap' }}>
                   {dosen.lastCheckIn || 'Belum ada data'}
                 </td>
-                <td style={{ textAlign: 'center' }}>
+                <td style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px', whiteSpace: 'nowrap' }}>
                   {dosen.lastCheckOut || 'Belum ada data'}
                 </td>
               </tr>

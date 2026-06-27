@@ -21,40 +21,57 @@ const KaryawanTable = ({ data, searchTerm }) => {
 
   return (
     <div className="table-wrapper">
-      <table>
+      <table   style={{
+    width: '100%',
+    borderCollapse: 'collapse',
+    border: '1px solid #e5e7eb'
+    }}>
         <thead>
           <tr>
-            <th style={{ textAlign: 'center' }}>No</th>
-            <th style={{ textAlign: 'center' }}>Nama</th>
-            <th style={{ textAlign: 'center' }}>Hadir</th>
-            <th style={{ textAlign: 'center' }}>Terlambat</th>
-            <th style={{ textAlign: 'center' }}>Total Hari Kerja</th>
-            <th style={{ textAlign: 'center' }}>Waktu Kehadiran</th>
-            <th style={{ textAlign: 'center' }}>Check In Terakhir</th>
-            <th style={{ textAlign: 'center' }}>Check Out Terakhir</th>
+            <th style={{ textAlign: 'center' , border: '1px solid #e5e7eb', padding: '12px', background: '#f8fafc', color: '#374151',
+              fontWeight: '700' }}>No</th>
+            <th style={{ textAlign: 'center' , border: '1px solid #e5e7eb', padding: '12px', background: '#f8fafc', color: '#374151',
+              fontWeight: '700' }}>Nama</th>
+            <th style={{ textAlign: 'center' , border: '1px solid #e5e7eb', padding: '12px', background: '#f8fafc', color: '#374151',
+              fontWeight: '700' }}>Hadir</th>
+            <th style={{ textAlign: 'center' , border: '1px solid #e5e7eb', padding: '12px', background: '#f8fafc', color: '#374151',
+              fontWeight: '700' }}>Terlambat</th>
+            <th style={{ textAlign: 'center' , border: '1px solid #e5e7eb', padding: '12px', background: '#f8fafc', color: '#374151',
+              fontWeight: '700' }}>Total Hari Kerja</th>
+            <th style={{ textAlign: 'center' , border: '1px solid #e5e7eb', padding: '12px', background: '#f8fafc', color: '#374151',
+              fontWeight: '700' }}>Waktu Kehadiran</th>
+            <th style={{ textAlign: 'center' , border: '1px solid #e5e7eb', padding: '12px', background: '#f8fafc', color: '#374151',
+              fontWeight: '700' }}>Check In Terakhir</th>
+            <th style={{ textAlign: 'center' , border: '1px solid #e5e7eb', padding: '12px', background: '#f8fafc', color: '#374151',
+              fontWeight: '700' }}>Check Out Terakhir</th>
           </tr>
         </thead>
         <tbody>
           {filteredData.map((karyawan, index) => (
             <tr key={karyawan.id || karyawan.nip || index}>
-              <td style={{ textAlign: 'center' }}>{index + 1}</td>
-              <td style={{ textAlign: 'center', fontWeight: '600' }}>
+              <td style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px'}}>{index + 1}</td>
+              <td style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px',
+              fontWeight: '600' }}>
                 {karyawan.nama || 'N/A'}
               </td>
-              <td style={{ textAlign: 'center' }}>{karyawan.totalHadir || 0}</td>
-              <td style={{ textAlign: 'center' }}>
+              <td style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px'}}>
+                {karyawan.totalHadir || 0}
+              </td>
+              <td style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px' }}>
                 <span style={{ color: '#EF4444', fontWeight: '600' }}>
                   {karyawan.totalTerlambat || 0}
                 </span>
               </td>
-              <td style={{ textAlign: 'center' }}>{karyawan.totalHariKerja || 0}</td>
-              <td style={{ textAlign: 'center' }}>
+              <td style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px' }}>
+                {karyawan.totalHariKerja || 0}
+              </td>
+              <td style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px', whiteSpace: 'nowrap' }}>
                 {karyawan.attendanceDates || 'Belum ada data'}
               </td>
-              <td style={{ textAlign: 'center' }}>
+              <td style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px', whiteSpace: 'nowrap' }}>
                 {karyawan.lastCheckIn || 'Belum ada data'}
               </td>
-              <td style={{ textAlign: 'center' }}>
+              <td style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '12px', whiteSpace: 'nowrap' }}>
                 {karyawan.lastCheckOut || 'Belum ada data'}
               </td>
             </tr>

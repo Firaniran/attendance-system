@@ -1,211 +1,280 @@
-// ==================== FILTER PANEL WITH SESSION TOGGLE ====================
+// ==================== FILTER PANEL ====================
 // File: src/components/FilterPanel.jsx
+//
+// ⚠️  ATURAN PENTING — ROLE CHECK DI SINI:
+//   SELALU gunakan prop `permissions.canExport` untuk guard export.
+//   JANGAN pernah cek user.role langsung di komponen ini.
+//
+// Alasan: authService menyimpan role sebagai LOWERCASE ('admin', 'pimpinan').
+// ROLE_PERMISSIONS di AuthContext menggunakan key lowercase juga.
+// Dashboard sudah menghitung permissions yang benar dan meneruskannya ke sini.
+// Mengecek ulang user.role di sini (apalagi dengan uppercase) menyebabkan bug
+// di mana Admin/Pimpinan yang valid dianggap tidak punya akses export.
 
 import React, { useState } from 'react';
-import { Download, FileSpreadsheet, FileText, Database, Sun, Moon, LayoutGrid } from 'lucide-react';
-import { exportService } from '../services/exportService';
+import { Sun, Moon, LayoutGrid, Download, Lock } from 'lucide-react';
+import { apiService } from '../services/apiService';
 
-// ==================== SESSION INFO CONFIG ====================
-const SESSION_CONFIG = {
-  all: {
-    label: 'Semua Sesi',
-    icon: LayoutGrid,
-    description: 'Menampilkan semua sesi — pagi (08.00–15.00) dan malam (16.00–21.00)',
-    className: 'session-btn-all',
-    infoClassName: 'session-info-all',
-  },
-  pagi: {
-    label: 'Kelas Pagi',
-    sublabel: '08.00 – 15.00',
-    icon: Sun,
-    description: 'Menampilkan kelas pagi — jam masuk antara 08.00 hingga 15.00',
-    className: 'session-btn-pagi',
-    infoClassName: 'session-info-pagi',
-  },
-  malam: {
-    label: 'Kelas Malam',
-    sublabel: '16.00 – 21.00',
-    icon: Moon,
-    description: 'Menampilkan kelas malam — jam masuk antara 16.00 hingga 21.00',
-    className: 'session-btn-malam',
-    infoClassName: 'session-info-malam',
-  },
-};
+// ── Opsi tombol cepat periode ──
+const PERIOD_OPTIONS = [
+  { value: 'today', label: 'Hari Ini'   },
+  { value: 'week',  label: 'Minggu Ini' },
+  { value: 'month', label: 'Bulan Ini'  },
+];
 
-// ==================== FILTER PANEL COMPONENT ====================
+// ── Opsi sesi kelas (hanya untuk tab Dosen) ──
+const SESSION_OPTIONS = [
+  {
+    key:      'all',
+    label:    'Semua Sesi',
+    sub:      'Gabungan pagi & malam',
+    Icon:     LayoutGrid,
+    cls:      'session-btn-all',
+    infoCls:  'session-info-all',
+    infoText: 'Menampilkan semua sesi kehadiran',
+  },
+  {
+    key:      'pagi',
+    label:    'Pagi',
+    sub:      '08.00 – 15.59 WIB',
+    Icon:     Sun,
+    cls:      'session-btn-pagi',
+    infoCls:  'session-info-pagi',
+    infoText: 'Sesi Pagi: pukul 08.00 – 15.59 WIB',
+  },
+  {
+    key:      'malam',
+    label:    'Malam',
+    sub:      '16.00 – 21.00 WIB',
+    Icon:     Moon,
+    cls:      'session-btn-malam',
+    infoCls:  'session-info-malam',
+    infoText: 'Sesi Malam: pukul 16.00 – 21.00 WIB',
+  },
+];
+
+// ── Opsi tombol export — format harus cocok dengan endpointMap di apiService ──
+const EXPORT_OPTIONS = [
+  { format: 'excel',  label: 'Excel',        cls: 'export-btn-excel'  },
+  { format: 'detail', label: 'Excel Detail',  cls: 'export-btn-detail' },
+  { format: 'pdf',    label: 'PDF',           cls: 'export-btn-pdf'    },
+  { format: 'csv',    label: 'CSV',           cls: 'export-btn-csv'    },
+];
+
+// ==================== KOMPONEN UTAMA ====================
 const FilterPanel = ({
-  activeTab,
-  activeSession,
-  onSessionChange,
-  selectedPeriod,
-  dateRange,
-  onDateRangeChange,
-  onPeriodChange,
+  activeTab,          // 'dosen' | 'karyawan'
+  activeSession,      // 'all' | 'pagi' | 'malam'
+  onSessionChange,    // (session: string) => void
+  selectedPeriod,     // 'today' | 'week' | 'month'
+  dateRange,          // { start: 'YYYY-MM-DD', end: 'YYYY-MM-DD' }
+  onDateRangeChange,  // (range) => void
+  onPeriodChange,     // (period: string) => void
+  permissions,        // objek dari ROLE_PERMISSIONS — pakai .canExport untuk guard
 }) => {
-  const [exporting, setExporting] = useState(null);
+  const [exportLoading, setExportLoading]   = useState(null);
+  const [exportMessage, setExportMessage]   = useState({ text: '', isError: false });
 
+  const isDosen = activeTab === 'dosen';
+
+  // Cari info sesi yang sedang aktif untuk banner informasi
+  const activeSessionInfo = SESSION_OPTIONS.find(s => s.key === activeSession);
+
+  // ── Handler export ──
   const handleExport = async (format) => {
-    setExporting(format);
+    if (exportLoading) return; // cegah double-click
+    setExportLoading(format);
+    setExportMessage({ text: '', isError: false });
     try {
-      let result;
-      switch (format) {
-        case 'excel':
-          result = await exportService.exportToExcel(activeTab, dateRange.start, dateRange.end);
-          break;
-        case 'pdf':
-          result = await exportService.exportToPDF(activeTab, dateRange.start, dateRange.end);
-          break;
-        case 'csv':
-          result = await exportService.exportToCSV(activeTab, dateRange.start, dateRange.end);
-          break;
-        case 'detail':
-          result = await exportService.exportDetailedToExcel(activeTab, dateRange.start, dateRange.end);
-          break;
-        default:
-          throw new Error('Format tidak didukung');
-      }
-      if (result.success) alert(`✅ ${result.message}`);
-    } catch (error) {
-      console.error('Export error:', error);
-      alert(`❌ ${error.message || 'Gagal mengexport data. Silakan coba lagi.'}`);
+      const jabatan = isDosen ? 'DOSEN' : 'KARYAWAN';
+      const result  = await apiService.exportData(format, jabatan, dateRange.start, dateRange.end);
+      setExportMessage({ text: result.message || '✅ Export berhasil!', isError: false });
+    } catch (err) {
+      setExportMessage({ text: err.message || '❌ Export gagal.', isError: true });
     } finally {
-      setExporting(null);
+      setExportLoading(null);
+      setTimeout(() => setExportMessage({ text: '', isError: false }), 4000);
     }
   };
 
-  const currentSession = SESSION_CONFIG[activeSession];
+  // ── Handler perubahan tanggal kustom ──
+  const handleStartChange = (e) => {
+    onDateRangeChange({ ...dateRange, start: e.target.value });
+  };
+  const handleEndChange = (e) => {
+    onDateRangeChange({ ...dateRange, end: e.target.value });
+  };
 
   return (
     <div className="filter-panel">
-      {/* ===== BARIS 1: PERIODE & TANGGAL ===== */}
+
+      {/* ═══════════════════════════════════════════════
+          SEKSI 1 — PERIODE
+      ═══════════════════════════════════════════════ */}
       <div className="filter-section">
-        <h3 className="filter-section-title">
+        <p className="filter-section-title">
           <span className="filter-section-icon">📅</span>
-          Periode &amp; Tanggal
-        </h3>
+          Periode
+        </p>
+
         <div className="filter-row">
-          <div className="filter-field">
-            <label className="filter-label">Periode</label>
-            <select
-              value={selectedPeriod}
-              onChange={(e) => onPeriodChange(e.target.value)}
-              className="filter-select"
-            >
-              <option value="today">Hari Ini</option>
-              <option value="week">Minggu Ini</option>
-              <option value="month">Bulan Ini</option>
-              <option value="custom">Custom</option>
-            </select>
-          </div>
-          <div className="filter-field">
-            <label className="filter-label">Tanggal Mulai</label>
-            <input
-              type="date"
-              value={dateRange.start}
-              onChange={(e) => onDateRangeChange({ ...dateRange, start: e.target.value })}
-              className="filter-input"
-            />
-          </div>
-          <div className="filter-field">
-            <label className="filter-label">Tanggal Akhir</label>
-            <input
-              type="date"
-              value={dateRange.end}
-              onChange={(e) => onDateRangeChange({ ...dateRange, end: e.target.value })}
-              className="filter-input"
-            />
-          </div>
-        </div>
-      </div>
 
-      {/* ===== DIVIDER ===== */}
-      <div className="filter-divider" />
-
-      {/* ===== BARIS 2: FILTER SESI (hanya untuk dosen) ===== */}
-      {activeTab === 'dosen' && (
-        <>
-          <div className="filter-section">
-            <h3 className="filter-section-title">
-              <span className="filter-section-icon">🕐</span>
-              Sesi Kelas
-            </h3>
-
-            <div className="session-toggle-group">
-              {Object.entries(SESSION_CONFIG).map(([key, cfg]) => {
-                const Icon = cfg.icon;
-                const isActive = activeSession === key;
+          {/* Tombol cepat: Hari Ini / Minggu Ini / Bulan Ini */}
+          <div className="filter-field" style={{ gridColumn: 'span 2' }}>
+            <label className="filter-label">Pilih Periode Cepat</label>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {PERIOD_OPTIONS.map(({ value, label }) => {
+                const isActive = selectedPeriod === value;
                 return (
                   <button
-                    key={key}
-                    onClick={() => onSessionChange(key)}
-                    className={`session-toggle-btn ${cfg.className} ${isActive ? 'active' : ''}`}
+                    key={value}
+                    type="button"
+                    onClick={() => onPeriodChange(value)}
+                    style={{
+                      padding:      '7px 14px',
+                      borderRadius: '7px',
+                      border:       isActive ? '1.5px solid #1d4ed8' : '1.5px solid #e2e8f0',
+                      background:   isActive ? '#eff6ff' : 'white',
+                      color:        isActive ? '#1d4ed8' : '#4a5568',
+                      fontSize:     '13px',
+                      fontWeight:   isActive ? '700' : '500',
+                      cursor:       'pointer',
+                      transition:   'all 0.15s',
+                    }}
                   >
-                    <span className="session-btn-icon">
-                      <Icon size={18} />
-                    </span>
-                    <span className="session-btn-content">
-                      <span className="session-btn-label">{cfg.label}</span>
-                      {cfg.sublabel && (
-                        <span className="session-btn-sublabel">{cfg.sublabel}</span>
-                      )}
-                    </span>
-                    {isActive && <span className="session-active-dot" />}
+                    {label}
                   </button>
                 );
               })}
             </div>
-
-            {/* Info sesi aktif */}
-            <div className={`session-info-banner ${currentSession.infoClassName}`}>
-              <span className="session-info-icon">
-                {activeSession === 'pagi' ? <Sun size={15} /> : activeSession === 'malam' ? <Moon size={15} /> : <LayoutGrid size={15} />}
-              </span>
-              <span className="session-info-text">{currentSession.description}</span>
-            </div>
           </div>
 
+          {/* Date range kustom */}
+          <div className="filter-field">
+            <label className="filter-label">Dari Tanggal</label>
+            <input
+              type="date"
+              className="filter-input"
+              value={dateRange.start}
+              max={dateRange.end || undefined}
+              onChange={handleStartChange}
+            />
+          </div>
+
+          <div className="filter-field">
+            <label className="filter-label">Sampai Tanggal</label>
+            <input
+              type="date"
+              className="filter-input"
+              value={dateRange.end}
+              min={dateRange.start || undefined}
+              onChange={handleEndChange}
+            />
+          </div>
+
+        </div>
+      </div>
+
+      {isDosen && (
+        <>
           <div className="filter-divider" />
+          <div className="filter-section">
+            <p className="filter-section-title">
+              <span className="filter-section-icon">🕐</span>
+              Sesi Kelas
+            </p>
+
+            <div className="session-toggle-group">
+              {SESSION_OPTIONS.map(({ key, label, sub, Icon, cls }) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={`session-toggle-btn ${cls}${activeSession === key ? ' active' : ''}`}
+                  onClick={() => onSessionChange(key)}
+                >
+                  <span className="session-btn-icon">
+                    <Icon size={16} />
+                  </span>
+                  <span className="session-btn-content">
+                    <span className="session-btn-label">{label}</span>
+                    <span className="session-btn-sublabel">{sub}</span>
+                  </span>
+                  {activeSession === key && <span className="session-active-dot" />}
+                </button>
+              ))}
+            </div>
+
+            {/* Banner info sesi aktif */}
+            {activeSessionInfo && (
+              <div
+                className={`session-info-banner ${activeSessionInfo.infoCls}`}
+                style={{ marginTop: '10px' }}
+              >
+                <span className="session-info-icon" style={{ fontSize: '14px' }}>ℹ️</span>
+                <span>{activeSessionInfo.infoText}</span>
+              </div>
+            )}
+          </div>
         </>
       )}
 
-      {/* ===== BARIS 3: EXPORT ===== */}
+      <div className="filter-divider" />
       <div className="filter-section">
-        <h3 className="filter-section-title">
-          <span className="filter-section-icon">📤</span>
-          Export Laporan dari Fingerspot
-        </h3>
-        <div className="export-btn-group">
-          <button
-            onClick={() => handleExport('excel')}
-            disabled={exporting !== null}
-            className="export-btn export-btn-excel"
-            title="Export ke Excel"
-          >
-            <FileSpreadsheet size={16} />
-            {exporting === 'excel' ? 'Mengexport...' : 'Excel'}
-          </button>
+        <p className="filter-section-title">
+          <span className="filter-section-icon">📥</span>
+          Export Data
+        </p>
 
-          <button
-            onClick={() => handleExport('pdf')}
-            disabled={exporting !== null}
-            className="export-btn export-btn-pdf"
-            title="Export ke PDF"
-          >
-            <FileText size={16} />
-            {exporting === 'pdf' ? 'Mengexport...' : 'PDF'}
-          </button>
+        {permissions?.canExport ? (
+          /* ── User punya akses export ── */
+          <>
+            <div className="export-btn-group">
+              {EXPORT_OPTIONS.map(({ format, label, cls }) => (
+                <button
+                  key={format}
+                  type="button"
+                  className={`export-btn ${cls}`}
+                  onClick={() => handleExport(format)}
+                  disabled={exportLoading !== null}
+                >
+                  <Download size={13} />
+                  {exportLoading === format ? 'Mengunduh...' : label}
+                </button>
+              ))}
+            </div>
 
-          <button
-            onClick={() => handleExport('csv')}
-            disabled={exporting !== null}
-            className="export-btn export-btn-csv"
-            title="Export ke CSV"
-          >
-            <Download size={16} />
-            {exporting === 'csv' ? 'Mengexport...' : 'CSV'}
-          </button>
-        </div>
+            {/* Pesan sukses / error setelah export */}
+            {exportMessage.text && (
+              <p style={{
+                marginTop:  '8px',
+                fontSize:   '12px',
+                fontWeight: '600',
+                color:      exportMessage.isError ? '#dc2626' : '#059669',
+              }}>
+                {exportMessage.text}
+              </p>
+            )}
+          </>
+        ) : (
+          /* ── User tidak punya akses export ── */
+          <div style={{
+            display:      'flex',
+            alignItems:   'center',
+            gap:          '8px',
+            padding:      '10px 14px',
+            background:   '#f8fafc',
+            borderRadius: '8px',
+            border:       '1px dashed #e2e8f0',
+            color:        '#9ca3af',
+            fontSize:     '13px',
+            fontWeight:   '500',
+          }}>
+            <Lock size={14} style={{ flexShrink: 0 }} />
+            Fitur export hanya tersedia untuk Admin dan Pimpinan.
+          </div>
+        )}
       </div>
+
     </div>
   );
 };

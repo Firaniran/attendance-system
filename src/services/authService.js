@@ -1,6 +1,10 @@
-const BASE_URL = 'http://localhost:5000/api';
+// ==================== AUTH SERVICE ====================
+// File: src/services/authService.js
+
+const BASE_URL = 'http://localhost:3333/api';
 
 export const authService = {
+
   // ==================== LOGIN ====================
   async login(email, password) {
     if (!email || !password) {
@@ -20,10 +24,17 @@ export const authService = {
     const { data: responseData } = data;
     const { user, tokens } = responseData;
 
-    localStorage.setItem('token', tokens.access_token);
-    localStorage.setItem('user', JSON.stringify(user));
+    // Normalisasi role ke lowercase agar cocok dengan ROLES di AuthContext
+    // Backend mengirim "ADMIN", "PIMPINAN", dll → simpan "admin", "pimpinan"
+    const normalizedUser = {
+      ...user,
+      role: user.role ? user.role.toLowerCase() : 'karyawan',
+    };
 
-    return { token: tokens.access_token, user };
+    localStorage.setItem('token', tokens.access_token);
+    localStorage.setItem('user', JSON.stringify(normalizedUser));
+
+    return { token: tokens.access_token, user: normalizedUser };
   },
 
   // ==================== REGISTER ====================
@@ -33,7 +44,7 @@ export const authService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         username: userData.username,
-        email: userData.email,
+        email:    userData.email,
         password: userData.password
       })
     });
@@ -91,14 +102,10 @@ export const authService = {
   // ==================== AUTH CHECK ====================
   isAuthenticated() {
     const token = localStorage.getItem('token');
-
-    // No token = not authenticated
     if (!token) return false;
 
-    // Auto-clean old mock tokens or invalid tokens
-    // Valid JWT format: xxx.yyy.zzz (3 parts separated by dots)
+    // Valid JWT: 3 bagian dipisahkan titik
     const isValidJWTFormat = token.split('.').length === 3;
-
     if (!isValidJWTFormat || token === 'FAKE_JWT_TOKEN_FE_ONLY') {
       console.warn('Invalid or mock token detected, clearing authentication...');
       localStorage.removeItem('token');

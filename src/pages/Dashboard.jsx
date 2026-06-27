@@ -19,6 +19,8 @@ import { getTodayRange, getWeekRange, getMonthRange } from '../utils/dateUtils';
 import { apiService } from '../services/apiService';
 import { authService } from '../services/authService';
 import '../styles/main.css';
+import { Settings } from 'lucide-react';
+import UserManagement from '../pages/UserManagement';
 
 // ==================== HELPER ====================
 export function getSesiFromTime(timeStr) {
@@ -31,14 +33,6 @@ export function getSesiFromTime(timeStr) {
   return null;
 }
 
-// ==================== SIDEBAR NAV ITEMS ====================
-const NAV_ITEMS = [
-  { key: 'overview',  label: 'Overview',        icon: Home },
-  { key: 'realtime',  label: 'Live Realtime',   icon: Activity, badge: 'LIVE' },
-  { key: 'dosen',     label: 'Rekap Dosen',     icon: Users },
-  { key: 'karyawan',  label: 'Rekap Karyawan',  icon: Briefcase },
-];
-
 // ==================== MAIN COMPONENT ====================
 function Dashboard() {
   const navigate = useNavigate();
@@ -48,8 +42,19 @@ function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [user, setUser] = useState(null);
 
+  const NAV_ITEMS = [
+  { key: 'overview', label: 'Overview', icon: Home },
+  { key: 'realtime', label: 'Live Realtime', icon: Activity, badge: 'LIVE' },
+  { key: 'dosen', label: 'Rekap Dosen', icon: Users },
+  { key: 'karyawan', label: 'Rekap Karyawan', icon: Briefcase },
+
+  ...(user?.role === 'admin'
+    ? [{ key: 'user-alat', label: 'Manajemen Pengguna', icon: Settings }]
+    : []),
+];
+
   // ---- Rekap (Dosen & Karyawan) state ----
-  const [rekapTab, setRekapTab] = useState('dosen');          // which table inside rekap
+  const [rekapTab, setRekapTab] = useState('dosen');          
   const [activeSession, setActiveSession] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPeriod, setSelectedPeriod] = useState('today');
@@ -196,12 +201,13 @@ function Dashboard() {
   });
 
   // ==================== SECTION TITLE ====================
-  const sectionTitle = {
-    overview: 'Overview',
-    realtime: 'Live Realtime',
-    dosen: 'Rekap Dosen',
-    karyawan: 'Rekap Karyawan',
-  }[activeSection];
+const sectionTitle = {
+  overview: 'Overview',
+  realtime: 'Live Realtime',
+  dosen: 'Rekap Dosen',
+  karyawan: 'Rekap Karyawan',
+  'user-alat': 'Manajemen Pengguna',
+}[activeSection];
 
   // ==================== RENDER ====================
   return (
@@ -489,6 +495,10 @@ function Dashboard() {
               loading={tableLoading}
               rekapTab={rekapTab}
             />
+          )}
+
+          {activeSection === 'user-alat' && (
+            <UserManagement />
           )}
 
         </main>
