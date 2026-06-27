@@ -12,6 +12,7 @@ Dashboard monitoring kehadiran dosen dan karyawan berbasis fingerspot dengan tam
 
 ### 📊 Dashboard
 - ✅ Rekap absensi dosen (tanpa jam telat)
+- ✅ Riwayat kehadiran secara real time
 - ✅ Rekap absensi karyawan (dengan jam telat)
 - ✅ Filter periode (minggu/bulan/custom)
 - ✅ Export data (Excel, PDF, CSV)
@@ -43,11 +44,14 @@ attendance-system/
 │   │   ├── DosenTable.jsx
 │   │   ├── FilterPanel.jsx
 │   │   ├── Header.jsx
+│   │   ├── HourlyBarChart.jsx
 │   │   ├── KaryawanTable.jsx
+│   │   ├── LiveFeedList.jsx
 │   │   └── StatsCard.jsx
 │   ├── pages/
 │   │   ├── Dashboard.jsx
 │   │   ├── Login.jsx
+│   │   ├── RealtimeDashboard.jsx
 │   │   ├── Register.jsx
 │   │   └── ResetPassword.jsx
 │   ├── services/
@@ -55,7 +59,8 @@ attendance-system/
 │   │   └── authService.js
 │   ├── styles/
 │   │   ├── auth.css
-│   │   └── main.css
+│   │   ├── main.css
+│   │   └── realtime.css
 │   ├── utils/
 │   │   └── dateUtils.js
 │   ├── App.jsx
