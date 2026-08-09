@@ -41,7 +41,7 @@ export const fingerspotService = {
       
       const params = new URLSearchParams({
         cloud_id: FINGERSPOT_CONFIG.CLOUD_ID,
-        start_date: startDate, // Format: YYYY-MM-DD
+        start_date: startDate,
         end_date: endDate,
         ...(userId && { user_id: userId })
       });

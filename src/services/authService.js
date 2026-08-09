@@ -37,49 +37,6 @@ export const authService = {
     return { token: tokens.access_token, user: normalizedUser };
   },
 
-  // ==================== REGISTER ====================
-  async register(userData) {
-    const res = await fetch(`${BASE_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: userData.username,
-        email:    userData.email,
-        password: userData.password
-      })
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Registrasi gagal');
-    return data;
-  },
-
-  // ==================== FORGOT PASSWORD ====================
-  async forgotPassword(email) {
-    const res = await fetch(`${BASE_URL}/auth/forgot-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Gagal mengirim kode reset');
-    return data;
-  },
-
-  // ==================== VERIFY RESET CODE ====================
-  async verifyResetCode(email, code) {
-    const res = await fetch(`${BASE_URL}/auth/verify-code`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, code })
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Kode verifikasi tidak valid');
-    return data;
-  },
-
   // ==================== RESET PASSWORD ====================
   async resetPassword(email, code, newPassword) {
     const res = await fetch(`${BASE_URL}/auth/reset-password`, {

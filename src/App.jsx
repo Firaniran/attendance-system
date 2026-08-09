@@ -26,8 +26,6 @@ const PublicRoute = ({ children }) => {
 };
 
 // ==================== ROLE ROUTE ====================
-// Cek role user — jika tidak sesuai, redirect ke dashboard
-// Digunakan sebagai lapisan tambahan di atas ProtectedRoute
 const RoleRoute = ({ children, allowedRoles = [] }) => {
   const user = authService.getCurrentUser();
   if (!user) return <Navigate to="/login" replace />;
