@@ -1,5 +1,5 @@
 // ==================== AUTH CONTEXT ====================
-// File: src/context/AuthContext.js
+// File: src/context/AuthContext.jsx
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
