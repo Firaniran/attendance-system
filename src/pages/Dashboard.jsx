@@ -18,6 +18,7 @@ import HourlyBarChart from '../components/HourlyBarChart';
 import { getTodayRange, getWeekRange, getMonthRange } from '../utils/dateUtils';
 import { apiService } from '../services/apiService';
 import { authService } from '../services/authService';
+import notificationService from '../services/notificationService';
 import '../styles/main.css';
 import { Settings } from 'lucide-react';
 import UserManagement from '../pages/UserManagement';
@@ -72,11 +73,22 @@ function Dashboard() {
   const [rtLoading, setRtLoading] = useState(false);
   const pollRef = useRef(null);
 
-  // ---- Auth ----
-  useEffect(() => {
-    const currentUser = authService.getCurrentUser();
-    setUser(currentUser);
-  }, []);
+  // ---- Auth & Notifications ----
+
+// Ambil user yang sedang login
+useEffect(() => {
+  const currentUser = authService.getCurrentUser();
+  setUser(currentUser);
+}, []);
+
+// Request izin notifikasi
+useEffect(() => {
+  const setupNotifications = async () => {
+    await notificationService.requestPermission();
+  };
+
+  setupNotifications();
+}, []);
 
   // ==================== REKAP DATA ====================
   const loadRekapData = useCallback(async () => {
