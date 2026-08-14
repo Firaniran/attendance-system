@@ -7,31 +7,35 @@ export default defineConfig({
     react(),
 
     VitePWA({
-      registerType: 'autoUpdate',
+  registerType: 'autoUpdate',
 
-      manifest: {
-        name: 'Attendance System',
-        short_name: 'Attendance',
-        description: 'Sistem Informasi Kehadiran',
-        theme_color: '#ffffff',
-        background_color: '#ffffff',
-        display: 'standalone',
-        start_url: '/',
-        scope: '/',
+  devOptions: {
+    enabled: true,
+  },
 
-        icons: [
-          {
-            src: '/logo192.png',
-            sizes: '192x192',
-            type: 'image/png',
-          },
-          {
-            src: '/logo512.png',
-            sizes: '512x512',
-            type: 'image/png',
-          },
-        ],
+  manifest: {
+    name: 'Attendance System',
+    short_name: 'Attendance',
+    description: 'Sistem Informasi Kehadiran',
+    theme_color: '#ffffff',
+    background_color: '#ffffff',
+    display: 'standalone',
+    start_url: '/',
+    scope: '/',
+
+    icons: [
+      {
+        src: '/logo192.png',
+        sizes: '192x192',
+        type: 'image/png',
       },
+      {
+        src: '/logo512.png',
+        sizes: '512x512',
+        type: 'image/png',
+      },
+    ],
+    },
     }),
   ],
 })
