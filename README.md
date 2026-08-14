@@ -1,39 +1,45 @@
-# 🎓 Sistem Rekap Absensi Kampus
+# Sistem Rekap Absensi Kampus
 
-Dashboard monitoring kehadiran dosen dan karyawan berbasis fingerspot dengan tampilan yang modern dan user-friendly.
+Aplikasi web untuk mengelola dan memantau data kehadiran dosen dan karyawan. Sistem ini terhubung dengan data absensi dari mesin fingerprint dan menyediakan rekap serta pemantauan kehadiran melalui dashboard.
 
-## ✨ Fitur
+## Fitur
 
-### 🔐 Authentication
-- ✅ Login dengan email & password
-- ✅ Reset password via email (kode verifikasi)
-- ✅ Protected routes & JWT authentication
+### Login dan Pengguna
 
-### 📊 Dashboard
-- ✅ Rekap absensi dosen (tanpa jam telat)
-- ✅ Riwayat kehadiran secara real time
-- ✅ Rekap absensi karyawan (dengan jam telat)
-- ✅ Filter periode (minggu/bulan/custom)
-- ✅ Export data (Excel, PDF, CSV)
-- ✅ Search & filter real-time
-- ✅ Statistik kehadiran
+* Login menggunakan email dan password
+* Reset password menggunakan kode verifikasi melalui email
+* Autentikasi menggunakan JWT
+* Halaman yang hanya dapat diakses oleh pengguna yang sudah login
 
-## 🛠️ Tech Stack
+### Dashboard
 
-**Frontend:**
-- React.js 18
-- React Router DOM (routing)
-- Lucide React (icons)
-- CSS3 (styling)
+* Rekap absensi dosen
+* Rekap absensi karyawan
+* Pemantauan kehadiran secara real-time
+* Informasi jam keterlambatan karyawan
+* Filter berdasarkan minggu, bulan, atau periode tertentu
+* Pencarian data
+* Statistik kehadiran
+* Export data ke Excel, PDF, dan CSV
 
-**Backend Integration:**
-- RESTful API
-- JWT Authentication
-- Fetch API
+## Teknologi yang Digunakan
 
-## 📁 Struktur Project
+### Frontend
 
-```
+* React.js
+* React Router DOM
+* Lucide React
+* CSS
+
+### Backend
+
+* REST API
+* JWT Authentication
+* Fetch API
+
+## Struktur Project
+
+```text
 attendance-system/
 ├── public/
 ├── src/
@@ -62,67 +68,74 @@ attendance-system/
 │   ├── utils/
 │   │   └── dateUtils.js
 │   ├── App.jsx
-│   └── index.js
+│   └── main.jsx
 ├── .gitignore
 ├── package.json
+├── vite.config.js
 └── README.md
 ```
 
-## 🚀 Cara Install & Jalankan
+## Menjalankan Project
 
-### Prerequisites
-- Node.js v14+ 
-- npm atau yarn
+### 1. Clone repository
 
-### Installation
+```bash
+git clone https://github.com/Firaniran/attendance-system.git
+cd attendance-system
+```
 
-1. **Clone repository**
-   ```bash
-   git clone https://github.com/username/attendance-system.git
-   cd attendance-system
-   ```
+### 2. Install dependencies
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
-3. **Setup environment variables**
-   
-   Buat file `.env` di root folder (opsional):
-   ```env
-   REACT_APP_API_URL=http://localhost:5000
-   ```
+### 3. Jalankan aplikasi
 
-4. **Jalankan development server**
-   ```bash
-   npm start
-   ```
-   
-   Aplikasi akan berjalan di `http://localhost:3000`
+```bash
+npm run dev
+```
 
-5. **Build untuk production**
-   ```bash
-   npm run build
-   ```
+Setelah Vite berjalan, buka alamat yang muncul di terminal, biasanya:
 
-## 🔧 Konfigurasi Backend
+```text
+http://localhost:5173
+```
 
-Update URL backend di file `src/services/apiService.js` dan `src/services/authService.js`:
+### 4. Build untuk production
+
+```bash
+npm run build
+```
+
+Untuk melihat hasil build secara lokal:
+
+```bash
+npm run preview
+```
+
+## Konfigurasi Backend
+
+URL API backend dapat disesuaikan pada file service yang digunakan aplikasi, seperti:
+
+```text
+src/services/apiService.js
+src/services/authService.js
+```
+
+Contoh:
 
 ```javascript
-const API_CONFIG = {
-  BASE_URL: 'https://your-backend-api.com', // Ganti dengan URL backend Anda
-  ENDPOINTS: {
-    // ...
-  }
-};
+const BASE_URL = 'http://localhost:3333/api';
 ```
 
-## 📝 API Endpoints
+Sesuaikan URL tersebut dengan alamat backend yang digunakan.
+
+## API yang Digunakan
 
 ### Authentication
-```
+
+```text
 POST /api/auth/login
 POST /api/auth/register
 POST /api/auth/forgot-password
@@ -132,43 +145,37 @@ POST /api/auth/logout
 ```
 
 ### Attendance
-```
-GET  /api/attendance/dosen?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
-GET  /api/attendance/karyawan?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
-GET  /api/attendance/export?type=dosen&format=excel&start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
+
+```text
+GET /api/attendance/dosen
+GET /api/attendance/karyawan
+GET /api/attendance/export
 ```
 
-## 📸 Screenshots
+Parameter periode dapat digunakan untuk mengambil data berdasarkan tanggal tertentu.
 
-### Login Page
+Contoh:
+
+```text
+?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
+```
+
+## Tampilan Aplikasi
+
+### Login
+
 ![Login Page](screenshots/login.png)
 
-### Dashboard - Rekap Dosen
+### Dashboard Rekap Dosen
+
 ![Dashboard Dosen](screenshots/dashboard-dosen.png)
 
-### Dashboard - Rekap Karyawan
+### Dashboard Rekap Karyawan
+
 ![Dashboard Karyawan](screenshots/dashboard-karyawan.png)
 
-## 🤝 Contributing
+## Developer
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+**Firani**
 
-## 📄 License
-
-This project is licensed under the MIT License.
-
-## 👨‍💻 Developer
-
-Developed by [Firani]
-
-## 📧 Contact
-
-- Email: your.firaninuranjani.com
-- GitHub: [@Firaniran](https://github.com/Firaniran)
-
----
-
-⭐ Jangan lupa kasih star jika project ini membantu!
-=======
-# attendance-system
->>>>>>> 91ab142156e20294b6cf1868019b6e0ff80149f2
+GitHub: [@Firaniran](https://github.com/Firaniran)
