@@ -9,6 +9,7 @@ import {
   Crown,
   GraduationCap,
   Briefcase,
+  Users,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -30,16 +31,10 @@ const ROLE_OPTIONS = [
     Icon: Crown,
   },
   {
-    value: 'DOSEN',
-    label: 'Dosen',
-    description: 'Dashboard absensi pribadi',
-    Icon: GraduationCap,
-  },
-  {
-    value: 'KARYAWAN',
-    label: 'Karyawan',
-    description: 'Dashboard absensi pribadi',
-    Icon: Briefcase,
+    value: 'PERSONAL',
+    label: 'Dosen / Karyawan',
+    description: 'Akses rekap data personal',
+    Icon: Users,
   },
 ];
 

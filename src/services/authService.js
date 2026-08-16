@@ -5,8 +5,8 @@ const BASE_URL = 'http://localhost:3333/api';
 
 export const authService = {
 
-  // ==================== LOGIN ====================
-  async login(email, password, expectedRole) {
+// ==================== LOGIN ====================
+async login(email, password, expectedRole) {
   if (!email || !password) {
     throw new Error('Email dan password wajib diisi');
   }
@@ -35,9 +35,16 @@ export const authService = {
   const backendRole = (user.role || '').toUpperCase();
   const selectedRole = (expectedRole || '').toUpperCase();
 
-  if (selectedRole && backendRole !== selectedRole) {
+  // Pilihan PERSONAL/NPA dapat digunakan oleh DOSEN dan KARYAWAN
+  const isPersonalLogin =
+    selectedRole === 'PERSONAL' &&
+    ['DOSEN', 'KARYAWAN'].includes(backendRole);
+
+  const isExactRoleMatch = backendRole === selectedRole;
+
+  if (selectedRole && !isPersonalLogin && !isExactRoleMatch) {
     throw new Error(
-      `Akun ini memiliki role ${backendRole}, bukan ${selectedRole}.`
+      `Akun ini memiliki role ${backendRole}, tidak sesuai pilihan login.`
     );
   }
 
@@ -46,15 +53,20 @@ export const authService = {
     role: backendRole.toLowerCase(),
   };
 
-  // Simpan dengan beberapa nama agar kompatibel dengan seluruh service
   localStorage.setItem('token', tokens.access_token);
   localStorage.setItem('access_token', tokens.access_token);
 
   if (tokens.refresh_token) {
-    localStorage.setItem('refresh_token', tokens.refresh_token);
+    localStorage.setItem(
+      'refresh_token',
+      tokens.refresh_token
+    );
   }
 
-  localStorage.setItem('user', JSON.stringify(normalizedUser));
+  localStorage.setItem(
+    'user',
+    JSON.stringify(normalizedUser)
+  );
 
   return {
     token: tokens.access_token,
