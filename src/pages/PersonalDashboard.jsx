@@ -17,7 +17,6 @@ import {
   Bell,
   Briefcase,
   Mail,
-  CreditCard,
   RefreshCw,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -495,14 +494,6 @@ const PersonalDashboard = ({ user }) => {
                     'Email tidak tersedia'}
                 </span>
               </div>
-
-              <div>
-                <CreditCard size={14} />
-                <span>
-                  {user?.employee_id ||
-                    'NIP tidak tersedia'}
-                </span>
-              </div>
             </div>
           </div>
 
@@ -606,13 +597,6 @@ const PersonalDashboard = ({ user }) => {
                 <div>
                   <span>Role</span>
                   <strong>{roleLabel}</strong>
-                </div>
-
-                <div>
-                  <span>NIP</span>
-                  <strong>
-                    {user?.employee_id || '-'}
-                  </strong>
                 </div>
               </div>
             </div>
