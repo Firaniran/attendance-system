@@ -30,6 +30,244 @@ div {
   scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
 }
 
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 16px;
+  background:
+    radial-gradient(circle at top left, #dbeafe, transparent 35%),
+    linear-gradient(135deg, #eef4ff 0%, #f8fafc 100%);
+}
+
+.auth-card {
+  width: min(100%, 560px);
+  margin: auto;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 20px 60px rgba(30, 64, 175, 0.18);
+}
+
+.auth-header {
+  padding: 28px 24px;
+  color: #ffffff;
+  text-align: center;
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+}
+
+.auth-logo {
+  display: block;
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 14px;
+  padding: 5px;
+  object-fit: contain;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.auth-header h1 {
+  margin: 0;
+  font-size: 25px;
+  font-weight: 800;
+}
+
+.auth-header p {
+  margin: 6px 0 0;
+  color: #dbeafe;
+  font-size: 13px;
+}
+
+.auth-content {
+  padding: 32px 38px 38px;
+}
+
+.auth-content h2 {
+  margin: 0 0 26px;
+  color: #172554;
+  font-size: 24px;
+  text-align: center;
+}
+
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.role-card {
+  min-height: 88px;
+  padding: 12px;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #334155;
+  text-align: left;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.role-card:hover {
+  border-color: #93c5fd !important;
+  background: #eff6ff;
+}
+
+.role-card.active {
+  border: 2px solid #2563eb !important;
+  background: #eff6ff;
+  color: #1d4ed8;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.role-card-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.role-card-description {
+  display: block;
+  margin-top: 6px;
+  padding-left: 24px;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.login-label,
+.login-field label {
+  display: block;
+  margin-bottom: 8px;
+  color: #1e3a8a;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.login-field {
+  margin-top: 18px;
+}
+
+.login-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.login-input-wrapper > svg {
+  position: absolute;
+  left: 14px;
+  color: #94a3b8;
+}
+
+.login-input {
+  width: 100%;
+  height: 50px;
+  padding: 0 44px;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  background: #f8fbff;
+  color: #172033;
+  font-size: 14px;
+  outline: none;
+}
+
+.login-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  border: 0;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.login-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px;
+  margin-bottom: 16px;
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 13px;
+}
+
+.forgot-password {
+  margin-top: 16px;
+  text-align: right;
+}
+
+.forgot-password button {
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.login-submit {
+  width: 100%;
+  height: 50px;
+  margin-top: 24px;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.login-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+@media (max-width: 600px) {
+  .auth-page {
+    padding: 16px 10px;
+  }
+
+  .auth-content {
+    padding: 26px 20px 32px;
+  }
+
+  .auth-logo {
+    width: 62px;
+    height: 62px;
+  }
+
+  .auth-header h1 {
+    font-size: 21px;
+  }
+
+  .role-card {
+    min-height: 82px;
+  }
+}
+
 /* Smooth Scroll Behavior */
 * {
   scroll-behavior: smooth;

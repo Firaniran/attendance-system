@@ -19,6 +19,7 @@ import { getTodayRange, getWeekRange, getMonthRange } from '../utils/dateUtils';
 import { apiService } from '../services/apiService';
 import { authService } from '../services/authService';
 import notificationService from '../services/notificationService';
+import PersonalDashboard from './PersonalDashboard';
 import '../styles/main.css';
 import { Settings } from 'lucide-react';
 import UserManagement from '../pages/UserManagement';
@@ -42,6 +43,14 @@ function Dashboard() {
   const [activeSection, setActiveSection] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [user, setUser] = useState(null);
+
+    // ---- Auth ----
+  useEffect(() => {
+    const currentUser = authService.getCurrentUser();
+    setUser(currentUser);
+  }, []);
+
+  // ---- Personal Dashboard ----
 
   const NAV_ITEMS = [
   { key: 'overview', label: 'Overview', icon: Home },
@@ -72,14 +81,6 @@ function Dashboard() {
   const [rtDate, setRtDate] = useState(new Date().toISOString().slice(0, 10));
   const [rtLoading, setRtLoading] = useState(false);
   const pollRef = useRef(null);
-
-  // ---- Auth & Notifications ----
-
-// Ambil user yang sedang login
-useEffect(() => {
-  const currentUser = authService.getCurrentUser();
-  setUser(currentUser);
-}, []);
 
 // Request izin notifikasi
 useEffect(() => {
@@ -211,6 +212,16 @@ useEffect(() => {
     if (rtSession === 'malam' && item.sesi !== 'malam') return false;
     return true;
   });
+
+    // ==================== PERSONAL DASHBOARD ====================
+
+  const isPersonalRole =
+    user?.role === 'dosen' ||
+    user?.role === 'karyawan';
+
+  if (isPersonalRole) {
+    return <PersonalDashboard user={user} />;
+  }
 
   // ==================== SECTION TITLE ====================
 const sectionTitle = {
